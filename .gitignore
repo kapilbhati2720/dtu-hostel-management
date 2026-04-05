@@ -1,0 +1,19 @@
+# Dependency directories
+node_modules/
+client/node_modules/
+
+# Environment variables
+.env
+
+# Build output
+dist/
+.next/
+build/
+
+# Log files
+*.log
+
+# Temporary SQL files
+*.pgsql # Ignore all .pgsql files
+
+/server/uploads/

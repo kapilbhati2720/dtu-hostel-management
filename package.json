@@ -1,0 +1,16 @@
+{
+  "name": "dtu-grm-portal",
+  "version": "1.0.0",
+  "description": "Grievance Redressal Management Portal for DTU",
+  "scripts": {
+    "dev-server": "npm run dev --prefix server",
+    "dev-client": "npm run dev --prefix client",
+    "dev": "concurrently \"npm run dev-server\" \"npm run dev-client\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}
