@@ -80,7 +80,7 @@ const DashboardPage = () => {
           </div>
           
           <div className="px-8 py-6 bg-white">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Student Profile</h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Resident Profile</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 
@@ -144,7 +144,7 @@ const DashboardPage = () => {
                 </div>
                 <h2 className="text-xl font-bold text-gray-900 mb-2">New Grievance</h2>
                 <p className="text-gray-500 mb-6 text-sm leading-relaxed">
-                    Facing an issue with Hostel, Academics, or Admin? File a formal complaint here.
+                    Facing an issue with your hostel? File a formal complaint here.
                 </p>
                 <span className="text-sm font-bold text-blue-600 flex items-center gap-1">
                     File Complaint <span className="transition-transform group-hover:translate-x-1">→</span>
@@ -165,6 +165,35 @@ const DashboardPage = () => {
                 </span>
             </Link>
 
+        </div>
+
+        {/* 2b. HOSTEL MODULE CARDS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Link to="/my-leaves" className="group bg-white p-8 rounded-2xl shadow-md border border-gray-200 hover:shadow-xl hover:border-orange-300 transition-all duration-300 transform hover:-translate-y-1">
+                <div className="h-12 w-12 bg-orange-500 text-white rounded-xl flex items-center justify-center mb-6 shadow-lg shadow-orange-100 group-hover:scale-110 transition-transform">
+                    <Clock size={24} strokeWidth={2.5} />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">My Leaves</h2>
+                <p className="text-gray-500 mb-6 text-sm leading-relaxed">
+                    Apply for hostel leave and check the status of your applications.
+                </p>
+                <span className="text-sm font-bold text-orange-600 flex items-center gap-1">
+                    View Leaves <span className="transition-transform group-hover:translate-x-1">→</span>
+                </span>
+            </Link>
+
+            <Link to="/announcements" className="group bg-white p-8 rounded-2xl shadow-md border border-gray-200 hover:shadow-xl hover:border-purple-300 transition-all duration-300 transform hover:-translate-y-1">
+                <div className="h-12 w-12 bg-purple-600 text-white rounded-xl flex items-center justify-center mb-6 shadow-lg shadow-purple-100 group-hover:scale-110 transition-transform">
+                    <AlertCircle size={24} strokeWidth={2.5} />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Announcements</h2>
+                <p className="text-gray-500 mb-6 text-sm leading-relaxed">
+                    View notices and updates from your hostel warden and staff.
+                </p>
+                <span className="text-sm font-bold text-purple-600 flex items-center gap-1">
+                    View Notices <span className="transition-transform group-hover:translate-x-1">→</span>
+                </span>
+            </Link>
         </div>
 
         {/* 3. QUICK OVERVIEW */}

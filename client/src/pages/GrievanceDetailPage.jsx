@@ -87,7 +87,7 @@ const GrievanceDetailPage = () => {
     // 2. Handle Permissions
     const isSuperAdmin = user?.roles.some(r => r.role_name === 'super_admin');
     const isAssignedOfficer = isSuperAdmin || (user?.roles.some(r =>
-        r.role_name === 'nodal_officer' && r.department_id === grievance?.department_id
+        r.role_name === 'nodal_officer' && r.hostel_id === grievance?.hostel_id
     ));
     const isClosed = ['Resolved', 'Rejected', 'Closed'].includes(grievance?.status);
 
@@ -165,8 +165,8 @@ const GrievanceDetailPage = () => {
 
     // 6. Navigation Logic
     const handleBackNavigation = () => {
-        if (isSuperAdmin) navigate('/admin/dashboard');
-        else if (isAssignedOfficer) navigate('/officer/dashboard');
+        if (isSuperAdmin) navigate('/warden/dashboard');
+        else if (isAssignedOfficer) navigate('/staff/dashboard');
         else navigate('/my-grievances');
     };
 

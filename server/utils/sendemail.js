@@ -13,7 +13,7 @@ const sendEmail = async (options) => {
 
   // 2) Define the email options
   const mailOptions = {
-    from: 'GRM Portal Admin <admin@dtu.ac.in>',
+    from: 'DTU Hostel Management <admin@dtu.ac.in>',
     to: options.to,
     subject: options.subject,
     html: options.html,

@@ -57,7 +57,7 @@ const RegisterPage = () => {
         
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center text-center px-12 text-white">
             <h1 className="text-3xl font-bold tracking-wider mb-2 uppercase">Delhi Technological University</h1>
-            <p className="text-sm font-semibold tracking-widest uppercase mb-12 opacity-90">Grievance Redressal Cell</p>
+            <p className="text-sm font-semibold tracking-widest uppercase mb-12 opacity-90">Hostel Administration</p>
             
             <div className="bg-black/40 backdrop-blur-sm p-8 rounded-xl border border-white/10 max-w-2xl">
                  <h3 className="text-xl font-bold mb-4">Why Register?</h3>

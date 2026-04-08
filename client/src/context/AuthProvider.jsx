@@ -56,7 +56,14 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => { loadUser(); }, [loadUser]);
 
   useEffect(() => {
-    const handleConnect = () => { if (user) socket.emit('addUser', user.user_id); };
+    const handleConnect = () => {
+      if (user) {
+        // Find user's hostel_id for socket room joining
+        const hostelRole = user.roles?.find(r => r.hostel_id);
+        const hostelId = hostelRole ? hostelRole.hostel_id : null;
+        socket.emit('addUser', user.user_id, hostelId);
+      }
+    };
     socket.on('connect', handleConnect);
     socket.on('new_notification', fetchNotifications);
     return () => {
@@ -107,9 +114,9 @@ export const AuthProvider = ({ children }) => {
         const userRoles = decodedUser.roles.map(role => role.role_name);
 
         if (userRoles.includes('super_admin')) {
-          navigate('/admin/dashboard');
+          navigate('/warden/dashboard');
         } else if (userRoles.includes('nodal_officer')) {
-          navigate('/officer/dashboard');
+          navigate('/staff/dashboard');
         } else {
           navigate('/dashboard');
         }

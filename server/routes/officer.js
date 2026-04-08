@@ -8,7 +8,6 @@ const auth = require('../middleware/auth');
 const isOfficer = (req, res, next) => {
     const isOfficerRole = req.user.roles.some(r => 
         r.role_name === 'nodal_officer' || 
-        r.role_name === 'department_head' || 
         r.role_name === 'super_admin'
     );
     if (isOfficerRole) {
@@ -24,25 +23,25 @@ router.get('/dashboard-data', [auth, isOfficer], async (req, res) => {
     try {
         const client = await pool.connect();
         try {
-            // --- NEW: Identify if the requester is a Super Admin ---
             const isSuperAdmin = req.user.roles.some(r => r.role_name === 'super_admin');
 
-            let departmentIds = req.user.roles
-                .filter(r => r.role_name === 'nodal_officer' || r.role_name === 'department_head')
-                .map(r => r.department_id);
+            let hostelIds = req.user.roles
+                .filter(r => r.role_name === 'nodal_officer')
+                .map(r => r.hostel_id)
+                .filter(Boolean);
 
             let grievanceQuery;
             let queryParams = [];
-            let deptClause = "";
+            let hostelClause = "";
 
-            // 1. Build the Logic based on Role (Super Admin vs Dept Officer)
+            // 1. Build the Logic based on Role (Super Admin vs Hostel Officer)
             if (isSuperAdmin) {
-                // Super Admin sees ALL, no WHERE clause needed for department
-                deptClause = "1=1"; 
-            } else if (departmentIds.length > 0) {
-                // Officer sees only their department(s)
-                deptClause = "ga.department_id = ANY($1::int[])";
-                queryParams = [departmentIds];
+                // Chief Warden sees ALL hostels
+                hostelClause = "1=1"; 
+            } else if (hostelIds.length > 0) {
+                // Officer sees only their hostel(s)
+                hostelClause = "ga.hostel_id = ANY($1::int[])";
+                queryParams = [hostelIds];
             } else {
                 return res.json({ 
                     stats: { cards: [], archive_count: 0 }, 
@@ -57,7 +56,7 @@ router.get('/dashboard-data', [auth, isOfficer], async (req, res) => {
                 FROM grievances g
                 JOIN grievance_assignments ga ON g.grievance_id = ga.grievance_id
                 JOIN users u ON g.submitted_by_id = u.user_id
-                WHERE ${deptClause}
+                WHERE ${hostelClause}
                 ORDER BY 
                     CASE WHEN g.is_escalated = TRUE THEN 0 ELSE 1 END, 
                     g.created_at DESC
@@ -85,19 +84,19 @@ router.get('/dashboard-data', [auth, isOfficer], async (req, res) => {
                         THEN 1 END) as history_archive
                 FROM grievances g
                 JOIN grievance_assignments ga ON g.grievance_id = ga.grievance_id
-                WHERE ${deptClause}
+                WHERE ${hostelClause}
             `;
             
             // 4. Fetch Trending Issues for the Community Feed
             const trendingQuery = `
                 SELECT 
-                    g.ticket_id, g.title, g.category, g.status, g.created_at, g.is_anonymous,
+                    g.ticket_id, g.title, g.category, g.status, g.created_at,
                     u.full_name as author_name,
                     (SELECT COUNT(*)::int FROM grievance_followers WHERE grievance_id = g.grievance_id) as upvotes
                 FROM grievances g
                 JOIN grievance_assignments ga ON g.grievance_id = ga.grievance_id
                 JOIN users u ON g.submitted_by_id = u.user_id
-                WHERE ${deptClause} 
+                WHERE ${hostelClause} 
                   AND g.upvotes > 0 
                   AND g.status NOT IN ('Rejected', 'Resolved', 'Closed')
                 ORDER BY upvotes DESC, g.created_at DESC
@@ -112,27 +111,10 @@ router.get('/dashboard-data', [auth, isOfficer], async (req, res) => {
 
             const row = statsRes.rows[0];
 
-            // --- NEW: THE DTO DATA MASKING LAYER ---
-            // We scrub the identity of the student if they requested anonymity, UNLESS a Super Admin is viewing.
-            const maskIdentity = (ticket) => {
-                if (ticket.is_anonymous && !isSuperAdmin) {
-                    return {
-                        ...ticket,
-                        submitted_by_name: 'Anonymous Student',
-                        author_name: 'Anonymous Student'
-                    };
-                }
-                return ticket;
-            };
-
-            // Apply the mask to both arrays
-            const securedGrievances = listRes.rows.map(maskIdentity);
-            const securedTrending = trendingRes.rows.map(maskIdentity);
-
             // 5. Format the Response
             res.json({
-                grievances: securedGrievances,
-                trending: securedTrending, 
+                grievances: listRes.rows,
+                trending: trendingRes.rows, 
                 stats: {
                     cards: [
                         { label: 'Actionable Queue', value: parseInt(row.pending_work) || 0, type: 'primary', desc: 'Tickets requiring attention' },

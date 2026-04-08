@@ -1,6 +1,9 @@
-require('dotenv').config({ path: '../.env' });
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const http = require('http');
 const { Server } = require("socket.io");
 require('./db');
@@ -12,14 +15,30 @@ const startCleanupWorker = require('./cron/cleanupWorker');
 
 const app = express();
 const server = http.createServer(app); 
+const allowedOrigins = process.env.CLIENT_URL ? [process.env.CLIENT_URL] : ["http://localhost:5173", "http://localhost:5174"];
+
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT"]
   }
 });
 
-app.use(cors());
+// Security Middleware (Helmet + Dynamic CORS + Rate Limit)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" } // Required to allow images to load across ports
+}));
+app.use(cors({ origin: allowedOrigins }));
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000,                // 1000 requests per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { msg: "Too many requests from this IP, please try again after 15 minutes" }
+});
+app.use('/api/', limiter);
+
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
@@ -28,28 +47,35 @@ let onlineUsers = {};
 // Define Routes and pass dependencies to them
 const authRoutes = require('./routes/auth');
 const notificationsRoutes = require('./routes/notifications');
-const adminRoutes = require('./routes/admin'); // Import admin routes
+const adminRoutes = require('./routes/admin');
 const grievancesRoutes = require('./routes/grievances')(io, onlineUsers);
 const officerRoutes = require('./routes/officer')(io, onlineUsers);
-const departmentsRoutes = require('./routes/departments');
+const hostelsRoutes = require('./routes/hostels');
+const leavesRoutes = require('./routes/leaves')(io, onlineUsers);
+const announcementsRoutes = require('./routes/announcements')(io, onlineUsers);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/notifications', notificationsRoutes);
-app.use('/api/admin', adminRoutes); // Use admin routes
+app.use('/api/admin', adminRoutes);
 app.use('/api/grievances', grievancesRoutes);
 app.use('/api/officer', officerRoutes);
-app.use('/api/departments', departmentsRoutes);
+app.use('/api/hostels', hostelsRoutes);
+app.use('/api/leaves', leavesRoutes);
+app.use('/api/announcements', announcementsRoutes);
 
 io.on('connection', (socket) => {
-    socket.on('addUser', (userId) => {
+    socket.on('addUser', (userId, hostelId) => {
         onlineUsers[userId] = socket.id;
-        console.log('Online users updated:', onlineUsers);
+        // Join hostel-specific room for scoped announcements
+        if (hostelId) {
+            socket.join(`hostel_${hostelId}`);
+        }
+        console.log('Online users updated:', Object.keys(onlineUsers).length);
     });
     socket.on('disconnect', () => {
         for (let userId in onlineUsers) {
             if (onlineUsers[userId] === socket.id) {
                 delete onlineUsers[userId];
-                console.log('Online users updated:', onlineUsers);
                 break;
             }
         }

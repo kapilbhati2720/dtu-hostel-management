@@ -9,7 +9,7 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import ChiefWardenDashboard from './pages/ChiefWardenDashboard';
 import MyGrievancesPage from './pages/MyGrievancesPage';
 import GrievanceDetailPage from './pages/GrievanceDetailPage';
 import SubmitGrievancePage from './pages/SubmitGrievancePage';
@@ -23,18 +23,18 @@ import FilteredGrievancesPage from './pages/FilteredGrievancesPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage'; 
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
-import DepartmentDashboard from './pages/DepartmentDashboard';
-import CommunityIssues from './pages/CommunityIssues';
+
+import LeavesPage from './pages/LeavesPage';
+import StaffLeavesPage from './pages/StaffLeavesPage';
+import AnnouncementsPage from './pages/AnnouncementsPage';
 
 function App() {
   const { isAuthenticated, user, loading, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation(); 
 
-  // --- NEW: LOGIC TO HIDE NAVBAR ON LOGIN/REGISTER ---
   const hideNavbarRoutes = ['/login', '/register'];
   const showNavbar = !hideNavbarRoutes.includes(location.pathname);
-  // ---------------------------------------------------
 
   const handleLogout = () => {
     logout();
@@ -43,8 +43,8 @@ function App() {
 
   const getDashboardPath = () => {
     if (!user || !user.roles || user.roles.length === 0) return '/dashboard';
-    if (user.roles.some(r => r.role_name === 'super_admin')) return '/admin/dashboard';
-    if (user.roles.some(r => r.role_name === 'nodal_officer')) return '/officer/dashboard';
+    if (user.roles.some(r => r.role_name === 'super_admin')) return '/warden/dashboard';
+    if (user.roles.some(r => r.role_name === 'nodal_officer')) return '/staff/dashboard';
     return '/dashboard';
   };
   
@@ -64,21 +64,36 @@ function App() {
   return (
     <div className="bg-gray-50 min-h-screen">
       
-      {/* --- CONDITIONAL NAVBAR RENDERING --- */}
       {showNavbar && (
         <nav className="sticky top-0 z-50 bg-white shadow p-4 flex justify-between items-center px-8">
-          <Link to="/" className="text-gray-800 hover:text-blue-600 font-bold text-lg">DTU GRM Portal</Link>
+          <Link to="/" className="text-gray-800 hover:text-blue-600 font-bold text-lg">DTU Hostel Management</Link>
           <div className="flex items-center gap-6">
           {isAuthenticated ? (
             <>
-              {/* Campus Feed Link */}
-              <Link 
-                  to="/community-issues" 
-                  className={`font-semibold transition-colors ${location.pathname === '/community-issues' ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'}`}
-              >
-                  Campus Feed
-              </Link>
 
+              {/* Announcements */}
+              <Link 
+                  to="/announcements" 
+                  className={`font-semibold transition-colors ${location.pathname === '/announcements' ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'}`}
+              >
+                  Notices
+              </Link>
+              {/* Leaves Navigation */}
+              {user?.roles?.some(r => r.role_name === 'super_admin' || r.role_name === 'nodal_officer') ? (
+                  <Link 
+                      to={user.roles.some(r => r.role_name === 'super_admin') ? "/warden/leaves" : "/staff/leaves"} 
+                      className={`font-semibold transition-colors ${(location.pathname === '/warden/leaves' || location.pathname === '/staff/leaves') ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'}`}
+                  >
+                      Manage Leaves
+                  </Link>
+              ) : (
+                  <Link 
+                      to="/my-leaves" 
+                      className={`font-semibold transition-colors ${location.pathname === '/my-leaves' ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'}`}
+                  >
+                      My Leaves
+                  </Link>
+              )}
               {location.pathname !== getDashboardPath() && (
                 <Link 
                     to={getDashboardPath()} 
@@ -106,7 +121,6 @@ function App() {
           </div>
         </nav>
       )}
-      {/* ------------------------------------- */}
 
       <main>
         <Routes>
@@ -119,26 +133,28 @@ function App() {
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} /> 
           <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
 
-          {/* Community Routes */}
-          <Route path="/community-issues" element={<PrivateRoute><CommunityIssues /></PrivateRoute>} />
 
-          {/* Student Protected Routes */}
+          {/* Resident Protected Routes */}
           <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
           <Route path="/my-grievances" element={<PrivateRoute><MyGrievancesPage /></PrivateRoute>} />
           <Route path="/grievance/:ticketId" element={<PrivateRoute><GrievanceDetailPage /></PrivateRoute>} />
           <Route path="/submit-grievance" element={<PrivateRoute><SubmitGrievancePage /></PrivateRoute>} />
 
-          {/* Officer Protected Routes */}
-          <Route path="/officer/dashboard" element={<OfficerRoute><OfficerDashboardPage /></OfficerRoute>} />
-          <Route path="/officer/grievance/:ticketId" element={<OfficerRoute><GrievanceDetailPage /></OfficerRoute>} />
+          {/* New Module Routes */}
+          <Route path="/my-leaves" element={<PrivateRoute><LeavesPage /></PrivateRoute>} />
+          <Route path="/announcements" element={<PrivateRoute><AnnouncementsPage /></PrivateRoute>} />
 
-          {/* Admin Protected Route */}
-          <Route path="/admin/dashboard" element={<AdminRoute><SuperAdminDashboard /></AdminRoute>} />
-          <Route path="/admin/grievances/:filterType/:filterValue" element={<AdminRoute><FilteredGrievancesPage /></AdminRoute>} />
-          <Route path="/admin/grievance/:ticketId" element={<AdminRoute><GrievanceDetailPage /></AdminRoute>} />
-          
-          {/* Department Dashboard Route */}
-          <Route path="/admin/department/:department" element={<DepartmentDashboard />} />
+          {/* Officer (Hostel Staff) Protected Routes */}
+          <Route path="/staff/dashboard" element={<OfficerRoute><OfficerDashboardPage /></OfficerRoute>} />
+          <Route path="/staff/leaves" element={<OfficerRoute><StaffLeavesPage /></OfficerRoute>} />
+          <Route path="/staff/grievance/:ticketId" element={<OfficerRoute><GrievanceDetailPage /></OfficerRoute>} />
+
+          {/* Admin (Chief Warden) Protected Routes */}
+          <Route path="/warden/dashboard" element={<AdminRoute><ChiefWardenDashboard /></AdminRoute>} />
+          <Route path="/warden/leaves" element={<AdminRoute><StaffLeavesPage /></AdminRoute>} />
+          <Route path="/warden/hostel/:hostelId" element={<AdminRoute><ChiefWardenDashboard /></AdminRoute>} />
+          <Route path="/warden/grievances/:filterType/:filterValue" element={<AdminRoute><FilteredGrievancesPage /></AdminRoute>} />
+          <Route path="/warden/grievance/:ticketId" element={<AdminRoute><GrievanceDetailPage /></AdminRoute>} />
         </Routes>
       </main>
       

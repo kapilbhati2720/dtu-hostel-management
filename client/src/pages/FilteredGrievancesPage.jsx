@@ -139,12 +139,12 @@ const FilteredGrievancesPage = () => {
                 {/* 1. HEADER & NAVIGATION */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>
-                        <button onClick={() => navigate('/admin/dashboard')} className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors mb-2 text-sm font-medium">
+                        <button onClick={() => navigate('/warden/dashboard')} className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors mb-2 text-sm font-medium">
                             <ArrowLeft size={16} /> Back to Dashboard
                         </button>
                         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
                             <Filter className="text-blue-600" />
-                            {filterType === 'status' ? 'Status View:' : filterType === 'all' ? 'System Overview' : 'Department View:'} 
+                            {filterType === 'status' ? 'Status View:' : filterType === 'all' ? 'System Overview' : 'Hostel View:'} 
                             <span className="text-blue-600 capitalize">
                                 {filterType === 'all' ? 'All Tickets' : decodeURIComponent(filterValue)}
                             </span>
@@ -207,7 +207,7 @@ const FilteredGrievancesPage = () => {
                                 {processedGrievances.length > 0 ? (
                                     processedGrievances.map((g) => {
                                         // --- FIX: ROBUST DATA ACCESS ---
-                                        const displayCategory = g.category || g.department || "General";
+                                        const displayCategory = g.category || g.hostel_name || "General";
                                         // Try finding the name in common nested locations
                                         const displayStudent = g.submitted_by_name || g.submittedBy?.full_name || g.user?.full_name || "Unknown User";
 
@@ -245,7 +245,7 @@ const FilteredGrievancesPage = () => {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right">
                                                     <Link 
-                                                        to={`/admin/grievance/${g.ticket_id}`} 
+                                                        to={`/warden/grievance/${g.ticket_id}`} 
                                                         className="text-blue-600 hover:text-blue-900 font-medium text-sm flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-all"
                                                     >
                                                         View <ArrowRight size={14} />

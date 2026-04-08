@@ -113,7 +113,7 @@ const SuperAdminDashboard = () => {
     const statRows = normalizeChartData(byStatus).map(i => [i.name, i.value]);
 
     const rows = [
-      ['DTU Grievance Redressal & Monitoring System - Executive Report'],
+      ['DTU Hostel Management System - Executive Report'],
       ['Generated On', new Date().toLocaleString()],
       [],
       ['--- KPI SUMMARY ---'],
@@ -124,7 +124,7 @@ const SuperAdminDashboard = () => {
       ['Efficiency Rate', `${Math.round((kpis?.resolved / kpis?.total) * 100) || 0}%`],
       [],
       ['--- CATEGORY DISTRIBUTION ---'],
-      ['Department', 'Count'],
+      ['Hostel', 'Count'],
       ...catRows,
       [],
       ['--- STATUS OVERVIEW ---'],
@@ -136,7 +136,7 @@ const SuperAdminDashboard = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `grm_report_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute("download", `hostel_report_${new Date().toISOString().slice(0,10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -168,7 +168,7 @@ const SuperAdminDashboard = () => {
 
   const handlePieClick = (data) => {
     if (data && data.name) {
-        navigate(`/admin/department/${encodeURIComponent(data.name)}`);
+        navigate(`/admin/grievances/hostel/${encodeURIComponent(data.name)}`);
     }
   };
 
@@ -320,7 +320,7 @@ const SuperAdminDashboard = () => {
       <div id="charts-grid" className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
         <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 flex flex-col hover:shadow-lg transition-shadow chart-container relative">
           <div className="flex justify-between items-center mb-6">
-             <h3 className="text-lg font-bold text-gray-800">Distribution by Department</h3>
+             <h3 className="text-lg font-bold text-gray-800">Distribution by Hostel</h3>
           </div>
           <div className="flex-1 min-h-[300px]">
             {pieData.length > 0 ? (

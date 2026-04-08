@@ -55,7 +55,7 @@ router.post('/register', async (req, res) => {
     // If this fails, it goes to 'catch', and the user INSERT is undone
     await sendEmail({
       to: email,
-      subject: 'GRM Portal - Email Verification',
+      subject: 'DTU Hostel Management - Email Verification',
       html: emailMessage,
     });
 
@@ -135,20 +135,21 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ msg: 'Invalid Credentials' });
     }
 
-    // Fetch roles from the new table
+    // Fetch roles from the hostel roles table
     const rolesRes = await pool.query(`
-      SELECT r.role_name, d.name as department_name, udr.department_id
-      FROM user_department_roles udr
-      JOIN roles r ON udr.role_id = r.role_id
-      JOIN departments d ON udr.department_id = d.department_id
-      WHERE udr.user_id = $1`, [user.user_id]
+      SELECT r.role_name, h.name as hostel_name, uhr.hostel_id
+      FROM user_hostel_roles uhr
+      JOIN roles r ON uhr.role_id = r.role_id
+      LEFT JOIN hostels h ON uhr.hostel_id = h.hostel_id
+      WHERE uhr.user_id = $1`, [user.user_id]
     );
 
     const userPayload = {
       id: user.user_id,
       name: user.full_name,
       email: user.email,
-      roles: rolesRes.rows, // This will be an array of roles/departments
+      designation: user.designation,
+      roles: rolesRes.rows,
     };
 
     const payload = { user: userPayload };
@@ -170,7 +171,7 @@ router.get('/', auth, async (req, res) => {
     try {
         // 1. Fetch basic user details from the 'users' table
         const userRes = await pool.query(
-            "SELECT user_id, full_name, email, roll_number, branch_code, admission_year FROM users WHERE user_id = $1", 
+            "SELECT user_id, full_name, email, roll_number, branch_code, admission_year, designation FROM users WHERE user_id = $1", 
             [req.user.id]
         );
 
@@ -179,13 +180,13 @@ router.get('/', auth, async (req, res) => {
         }
         let user = userRes.rows[0];
 
-        // 2. Fetch all roles and departments for that user
+        // 2. Fetch all roles and hostels for that user
         const rolesRes = await pool.query(
-            `SELECT r.role_name, d.department_id, d.name as department_name 
-             FROM user_department_roles udr
-             JOIN roles r ON udr.role_id = r.role_id
-             JOIN departments d ON udr.department_id = d.department_id
-             WHERE udr.user_id = $1`, 
+            `SELECT r.role_name, uhr.hostel_id, h.name as hostel_name 
+             FROM user_hostel_roles uhr
+             JOIN roles r ON uhr.role_id = r.role_id
+             LEFT JOIN hostels h ON uhr.hostel_id = h.hostel_id
+             WHERE uhr.user_id = $1`, 
             [req.user.id]
         );
 
@@ -274,7 +275,7 @@ router.post('/forgot-password', async (req, res) => {
 
         await sendEmail({ 
             to: user.email, 
-            subject: 'DTU GRM Portal - Password Reset', 
+            subject: 'DTU Hostel Management - Password Reset', 
             html: emailMessage 
         });
 

@@ -26,8 +26,8 @@ const generateGrievance = async (scenario) => {
 const triageGrievance = async (grievanceText) => {
     try {
         const prompt = `
-            Analyze this grievance: "${grievanceText}".
-            Return ONLY a JSON object (no markdown) with keys: "category" (Academic, Hostel, Administration, Library, Accounts, Other), "severity" (Low, Medium, High, Critical), and "reasoning" (1 sentence).
+            Analyze this hostel grievance: "${grievanceText}".
+            Return ONLY a JSON object (no markdown) with keys: "category" (Electrical, Civil, Horticulture, Computer Center, Cleanliness, Mess, Other), "severity" (Low, Medium, High, Critical), and "reasoning" (1 sentence).
         `;
         const result = await textModel.generateContent(prompt);
         const text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
@@ -68,23 +68,29 @@ const cosineSimilarity = (vecA, vecB) => {
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 };
 
-// 3. Find Similar Grievances (In-Memory Search)
-const findSimilarGrievances = async (newText) => {
+// 3. Find Similar Grievances (In-Memory Search with optional hostel scope)
+const findSimilarGrievances = async (newText, hostelId = null) => {
     const newVector = await generateEmbedding(newText);
     if (!newVector) return [];
 
-    // Fetch ONLY active grievances
-    const res = await pool.query(`
+    // Fetch ONLY active grievances, optionally scoped to a hostel
+    let query = `
         SELECT ticket_id, title, description, embedding, status 
         FROM grievances 
         WHERE status IN ('Submitted', 'Open', 'In Progress') 
         AND embedding IS NOT NULL
-    `);
+    `;
+    const params = [];
+    if (hostelId) {
+        query += ` AND hostel_id = $1`;
+        params.push(hostelId);
+    }
+
+    const res = await pool.query(query, params);
 
     if (res.rows.length === 0) return [];
 
     const matches = res.rows.map(row => {
-        // Postgres float8[] comes back as an array of numbers automatically
         const dbVector = row.embedding; 
         const similarity = cosineSimilarity(newVector, dbVector);
         return { 

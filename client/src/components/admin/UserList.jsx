@@ -97,7 +97,7 @@ const UserList = ({ searchTerm = "" }) => {
                 <thead className="bg-white">
                     <tr>
                         <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Role & Department</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Role & Hostel</th>
                         <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                         <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -107,7 +107,9 @@ const UserList = ({ searchTerm = "" }) => {
                         filteredUsers.map(user => {
                             const primaryRole = user.roles && user.roles.length > 0 ? user.roles[0] : null;
                             const roleName = primaryRole ? primaryRole.role_name : 'student';
-                            const deptName = primaryRole?.department_name;
+                            const hostelName = primaryRole?.hostel_name;
+                            const roleDisplayMap = { 'student': 'Resident', 'nodal_officer': 'Hostel Staff', 'super_admin': 'Chief Warden' };
+                            const displayRole = roleDisplayMap[roleName] || roleName;
 
                             return (
                                 <tr key={user.user_id} className="hover:bg-gray-50 transition-colors group">
@@ -132,7 +134,7 @@ const UserList = ({ searchTerm = "" }) => {
                                                     ${roleName === 'student' ? 'bg-blue-50 text-blue-700 border-blue-100' : 
                                                     roleName === 'super_admin' ? 'bg-purple-50 text-purple-700 border-purple-100' : 
                                                     'bg-orange-50 text-orange-700 border-orange-100'}`}>
-                                                    {roleName.replace('_', ' ')}
+                                                    {displayRole}
                                                 </span>
                                                 {user.roles && user.roles.length > 1 && (
                                                     <span className="text-[10px] font-bold bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded-full" title="Multiple Roles Assigned">
@@ -140,9 +142,14 @@ const UserList = ({ searchTerm = "" }) => {
                                                     </span>
                                                 )}
                                             </div>
-                                            {deptName && (
-                                                <span className="text-xs text-gray-500 mt-1 ml-1 truncate max-w-xs" title={deptName}>
-                                                    {deptName}
+                                            {hostelName && (
+                                                <span className="text-xs text-gray-500 mt-1 ml-1 truncate max-w-xs" title={hostelName}>
+                                                    {hostelName}
+                                                </span>
+                                            )}
+                                            {user.designation && (
+                                                <span className="text-xs text-indigo-500 mt-0.5 ml-1">
+                                                    {user.designation}
                                                 </span>
                                             )}
                                         </div>

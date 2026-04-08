@@ -142,7 +142,7 @@ const OfficerDashboardPage = () => {
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Officer Dashboard</h1>
                         <p className="text-sm text-gray-500 flex items-center gap-2">
-                             {user?.roles?.[0]?.department_name || "Department Overview"} 
+                             {user?.roles?.[0]?.hostel_name || "Hostel Overview"} 
                              <span className="w-1 h-1 rounded-full bg-gray-300"></span>
                              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                         </p>
@@ -154,7 +154,7 @@ const OfficerDashboardPage = () => {
             <div className="max-w-7xl mx-auto px-6 mt-8">
                 
                 {/* 2. ANALYTICS CARDS */}
-                {stats && stats.cards && (
+                {stats && stats.cards && stats.cards.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
                         <div onClick={() => !searchTerm && setActiveFilter('Pending')} className={getCardStyles('primary', activeFilter === 'Pending')}>
                             <div className="flex justify-between items-start">
@@ -206,7 +206,7 @@ const OfficerDashboardPage = () => {
                     </div>
                 )}
 
-                {/* PRIORITY HEATMAP FOR DEPARTMENT */}
+                {/* PRIORITY HEATMAP FOR HOSTEL */}
                 {trendingIssues.length > 0 && !searchTerm && activeFilter === 'Pending' && (
                     <div className="mb-8 animate-fade-in">
                         <div className="flex items-center gap-2 mb-4">

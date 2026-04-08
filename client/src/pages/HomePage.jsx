@@ -9,7 +9,7 @@ const HomePage = () => {
     <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 72px)' }}>
       <div className="text-center bg-white p-12 rounded-xl shadow-lg">
         <h1 className="text-5xl font-bold text-gray-800 mb-4">
-          DTU Grievance Redressal Portal
+          DTU Hostel Management
         </h1>
         
         {/* --- This logic is now corrected --- */}
@@ -22,7 +22,7 @@ const HomePage = () => {
           // View for GUESTS (logged-out users)
           <>
             <p className="text-lg text-gray-600 mb-8">
-              A centralized platform for students and faculty to raise and resolve issues efficiently.
+              A centralized platform for hostel residents and staff to raise and resolve issues efficiently.
             </p>
             <div className="space-x-4">
               <Link 

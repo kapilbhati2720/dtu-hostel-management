@@ -1,7 +1,7 @@
 {
-  "name": "dtu-grm-portal",
+  "name": "dtu-hostel-management",
   "version": "1.0.0",
-  "description": "Grievance Redressal Management Portal for DTU",
+  "description": "Hostel Management System for DTU",
   "scripts": {
     "dev-server": "npm run dev --prefix server",
     "dev-client": "npm run dev --prefix client",
@@ -11,6 +11,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "concurrently": "^9.2.0"
+    "concurrently": "^9.2.1"
   }
 }

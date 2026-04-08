@@ -7,7 +7,7 @@ const { generateGrievance, triageGrievance } = require('../services/aiService');
 const sendEmail = require('../utils/sendemail');
 
 
-// Middleware to check if user is a super_admin
+// Middleware to check if user is a super_admin (Chief Warden)
 const isAdmin = (req, res, next) => {
   if (req.user && req.user.roles.some(r => r.role_name === 'super_admin')) {
     next();
@@ -29,13 +29,13 @@ router.get('/roles', [auth, isAdmin], async (req, res) => {
     }
 });
 
-// @route   GET /api/admin/departments
-// @desc    Get all available departments
+// @route   GET /api/admin/hostels
+// @desc    Get all available hostels
 // @access  Private (Admin)
-router.get('/departments', [auth, isAdmin], async (req, res) => {
+router.get('/hostels', [auth, isAdmin], async (req, res) => {
     try {
-        const departments = await pool.query("SELECT * FROM departments ORDER BY name");
-        res.json(departments.rows);
+        const hostels = await pool.query("SELECT * FROM hostels ORDER BY name");
+        res.json(hostels.rows);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
@@ -54,18 +54,19 @@ router.get('/users', [auth, isAdmin], async (req, res) => {
           u.email, 
           u.is_active,
           u.is_verified,
+          u.designation,
           COALESCE(
               json_agg(DISTINCT jsonb_build_object(
               'role_name', r.role_name,
-              'department_name', d.name
+              'hostel_name', h.name
               )) 
               FILTER (WHERE r.role_id IS NOT NULL), 
               '[]'
           ) as roles
       FROM users u
-      LEFT JOIN user_department_roles udr ON u.user_id = udr.user_id
-      LEFT JOIN roles r ON udr.role_id = r.role_id
-      LEFT JOIN departments d ON udr.department_id = d.department_id
+      LEFT JOIN user_hostel_roles uhr ON u.user_id = uhr.user_id
+      LEFT JOIN roles r ON uhr.role_id = r.role_id
+      LEFT JOIN hostels h ON uhr.hostel_id = h.hostel_id
       GROUP BY u.user_id
       ORDER BY u.created_at DESC;
     `);
@@ -77,12 +78,12 @@ router.get('/users', [auth, isAdmin], async (req, res) => {
 });
 
 // @route   PUT /api/admin/users/:userId/roles
-// @desc    Sync a user's roles (Handles multiple departments gracefully using a Transaction)
+// @desc    Sync a user's roles (Handles multiple hostels gracefully using a Transaction)
 // @access  Private (Admin)
 router.put('/users/:userId/roles', [auth, isAdmin], async (req, res) => {
   const { userId } = req.params;
   const { assignments } = req.body; 
-  // 'assignments' expects an array: [{ roleId: 1, departmentId: 5 }, { roleId: 2, departmentId: null }]
+  // 'assignments' expects an array: [{ roleId: 1, hostelId: 5 }, { roleId: 2, hostelId: null }]
 
   if (!Array.isArray(assignments) || assignments.length === 0) {
     return res.status(400).json({ msg: 'Please provide an array of role assignments.' });
@@ -90,31 +91,31 @@ router.put('/users/:userId/roles', [auth, isAdmin], async (req, res) => {
 
   const client = await pool.connect();
   try {
-    await client.query('BEGIN'); // Start ACID Transaction
+    await client.query('BEGIN');
 
-    // 1. Wipe the user's old roles (Safe because we replace their ENTIRE state)
-    await client.query("DELETE FROM user_department_roles WHERE user_id = $1", [userId]);
+    // 1. Wipe the user's old roles
+    await client.query("DELETE FROM user_hostel_roles WHERE user_id = $1", [userId]);
 
-    // 2. Loop through the array and insert every role/dept combination
+    // 2. Insert every role/hostel combination
     for (const assignment of assignments) {
-      if (assignment.departmentId) {
+      if (assignment.hostelId) {
         await client.query(
-          "INSERT INTO user_department_roles (user_id, role_id, department_id) VALUES ($1, $2, $3)",
-          [userId, assignment.roleId, assignment.departmentId]
+          "INSERT INTO user_hostel_roles (user_id, role_id, hostel_id) VALUES ($1, $2, $3)",
+          [userId, assignment.roleId, assignment.hostelId]
         );
       } else {
-        // For Students or Super Admins who don't belong to a specific department
+        // For Students or Super Admins who don't belong to a specific hostel
         await client.query(
-          "INSERT INTO user_department_roles (user_id, role_id) VALUES ($1, $2)",
+          "INSERT INTO user_hostel_roles (user_id, role_id) VALUES ($1, $2)",
           [userId, assignment.roleId]
         );
       }
     }
 
-    await client.query('COMMIT'); // Lock it all in
+    await client.query('COMMIT');
     res.json({ msg: 'User roles synced successfully!' });
   } catch (err) {
-    await client.query('ROLLBACK'); // Cancel everything if even one insert fails
+    await client.query('ROLLBACK');
     console.error("Role Sync Error:", err.message);
     res.status(500).send('Server Error');
   } finally {
@@ -122,14 +123,33 @@ router.put('/users/:userId/roles', [auth, isAdmin], async (req, res) => {
   }
 });
 
+// @route   PUT /api/admin/users/:userId/designation
+// @desc    Update a user's designation (cosmetic title)
+// @access  Private (Admin)
+router.put('/users/:userId/designation', [auth, isAdmin], async (req, res) => {
+  const { userId } = req.params;
+  const { designation } = req.body;
+
+  try {
+    await pool.query(
+      "UPDATE users SET designation = $1 WHERE user_id = $2",
+      [designation, userId]
+    );
+    res.json({ msg: `Designation updated to "${designation}".` });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 // @route   POST /api/admin/create-user
-// @desc    Admin creates a new user (e.g., an officer) and sends setup email
+// @desc    Admin creates a new user (e.g., an officer/warden) and sends setup email
 // @access  Private (Admin)
 router.post('/create-user', [auth, isAdmin], async (req, res) => {
-  const { fullName, email, roleId, departmentId } = req.body;
+  const { fullName, email, roleId, hostelId, designation } = req.body;
 
-  if (!fullName || !email || !roleId || !departmentId) {
-    return res.status(400).json({ msg: 'Please provide full name, email, role, and department.' });
+  if (!fullName || !email || !roleId) {
+    return res.status(400).json({ msg: 'Please provide full name, email, and role.' });
   }
 
   const client = await pool.connect();
@@ -140,31 +160,38 @@ router.post('/create-user', [auth, isAdmin], async (req, res) => {
     }
 
     const setupToken = crypto.randomBytes(32).toString('hex');
-    const tokenExpires = new Date(Date.now() + 3600000 * 24); // Token valid for 24 hours
+    const tokenExpires = new Date(Date.now() + 3600000 * 24);
 
     await client.query('BEGIN');
 
     const newUserRes = await client.query(
-      `INSERT INTO users (full_name, email, is_verified, verification_token, verification_token_expires)
-       VALUES ($1, $2, false, $3, $4) RETURNING user_id`,
-      [fullName, email, setupToken, tokenExpires]
+      `INSERT INTO users (full_name, email, designation, is_verified, verification_token, verification_token_expires)
+       VALUES ($1, $2, $3, false, $4, $5) RETURNING user_id`,
+      [fullName, email, designation || null, setupToken, tokenExpires]
     );
     const newUserId = newUserRes.rows[0].user_id;
 
-    await client.query(
-      `INSERT INTO user_department_roles (user_id, role_id, department_id) VALUES ($1, $2, $3)`,
-      [newUserId, roleId, departmentId]
-    );
+    if (hostelId) {
+      await client.query(
+        `INSERT INTO user_hostel_roles (user_id, role_id, hostel_id) VALUES ($1, $2, $3)`,
+        [newUserId, roleId, hostelId]
+      );
+    } else {
+      await client.query(
+        `INSERT INTO user_hostel_roles (user_id, role_id) VALUES ($1, $2)`,
+        [newUserId, roleId]
+      );
+    }
 
     const setupUrl = `${process.env.CLIENT_URL}/set-password/${setupToken}`;
     const emailMessage = `
-      <h2>Welcome to the DTU Grievance Portal!</h2>
+      <h2>Welcome to the DTU Hostel Management Portal!</h2>
       <p>An administrator has created an account for you.</p>
       <p>Please click the link below to set your password and activate your account. This link is valid for 24 hours.</p>
       <a href="${setupUrl}" style="background-color: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">Set Your Password</a>
     `;
 
-    await sendEmail({ to: email, subject: 'Activate Your DTU Grievance Portal Account', html: emailMessage });
+    await sendEmail({ to: email, subject: 'Activate Your DTU Hostel Management Account', html: emailMessage });
 
     await client.query('COMMIT');
 
@@ -255,10 +282,10 @@ router.post('/triage-grievance', [auth, isAdmin], async (req, res) => {
     }
   });
 
-  // @route   GET /api/admin/analytics
-  // @desc    Get analytics data for the admin dashboard
+  // @route   GET /api/admin/analytics/global
+  // @desc    Get global analytics data for the Chief Warden dashboard
   // @access  Private (Super Admin only)
-  router.get('/analytics', [auth, isAdmin], async (req, res) => {
+  router.get('/analytics/global', [auth, isAdmin], async (req, res) => {
     try {
       const statusCountsQuery = `
         SELECT 
@@ -271,20 +298,140 @@ router.post('/triage-grievance', [auth, isAdmin], async (req, res) => {
       
       const categoryCountsQuery = `SELECT category, COUNT(*) FROM grievances GROUP BY category;`;
       const statusDistributionQuery = `SELECT status, COUNT(*) FROM grievances GROUP BY status;`;
+      const hostelDistributionQuery = `
+        SELECT h.name as hostel_name, COUNT(g.grievance_id) 
+        FROM hostels h 
+        LEFT JOIN grievances g ON h.hostel_id = g.hostel_id 
+        GROUP BY h.name;
+      `;
 
-      const [statusCountsRes, categoryCountsRes, statusDistributionRes] = await Promise.all([
+      const leavesQuery = `SELECT COUNT(*) AS pending_leaves FROM hostel_leaves WHERE status = 'Pending';`;
+      const announcementsQuery = `SELECT COUNT(*) AS total_announcements FROM announcements;`;
+
+      const [statusCountsRes, categoryCountsRes, statusDistributionRes, hostelDistributionRes, leavesRes, announcementsRes] = await Promise.all([
         pool.query(statusCountsQuery),
         pool.query(categoryCountsQuery),
-        pool.query(statusDistributionQuery)
+        pool.query(statusDistributionQuery),
+        pool.query(hostelDistributionQuery),
+        pool.query(leavesQuery),
+        pool.query(announcementsQuery)
       ]);
 
-      const analyticsData = {
-        kpis: statusCountsRes.rows[0],
+      res.json({
+        kpis: { 
+          ...statusCountsRes.rows[0], 
+          pending_leaves: leavesRes.rows[0].pending_leaves, 
+          total_announcements: announcementsRes.rows[0].total_announcements 
+        },
         byCategory: categoryCountsRes.rows,
-        byStatus: statusDistributionRes.rows
-      };
+        byStatus: statusDistributionRes.rows,
+        byHostel: hostelDistributionRes.rows
+      });
 
-      res.json(analyticsData);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  });
+
+  // @route   GET /api/admin/hostels/summary
+  // @desc    Get summary of all hostels for the global view cards
+  // @access  Private (Super Admin only)
+  router.get('/hostels/summary', [auth, isAdmin], async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          h.hostel_id, h.name, h.type, h.warden_name, h.warden_contact,
+          COUNT(g.grievance_id) AS total_grievances,
+          COUNT(g.grievance_id) FILTER (WHERE g.status IN ('Submitted', 'Open', 'In Progress', 'Awaiting Clarification', 'Escalated')) AS pending_grievances,
+          COUNT(g.grievance_id) FILTER (WHERE g.status IN ('Resolved', 'Closed', 'Rejected')) AS resolved_grievances
+        FROM hostels h
+        LEFT JOIN grievances g ON h.hostel_id = g.hostel_id
+        GROUP BY h.hostel_id
+        ORDER BY h.name;
+      `;
+      const result = await pool.query(query);
+      res.json(result.rows);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  });
+
+  // @route   GET /api/admin/analytics/hostel/:hostelId
+  // @desc    Get analytics data for a specific hostel
+  // @access  Private (Super Admin only)
+  router.get('/analytics/hostel/:hostelId', [auth, isAdmin], async (req, res) => {
+    const { hostelId } = req.params;
+    try {
+      // Basic stats
+      const statusCountsQuery = `
+        SELECT 
+          COUNT(*) AS total,
+          COUNT(*) FILTER (WHERE status IN ('Submitted', 'Open', 'In Progress', 'Awaiting Clarification', 'Escalated')) AS pending,
+          COUNT(*) FILTER (WHERE status IN ('Resolved', 'Closed')) AS resolved,
+          COUNT(*) FILTER (WHERE status IN ('Resolved', 'Closed', 'Rejected')) AS completed_work,
+          COUNT(*) FILTER (WHERE is_escalated = true OR status = 'Escalated') AS escalated
+        FROM grievances WHERE hostel_id = $1;
+      `;
+      
+      const statusDistributionQuery = `SELECT status, COUNT(*) FROM grievances WHERE hostel_id = $1 GROUP BY status;`;
+      
+      // Leaves
+      const leavesQuery = `SELECT COUNT(*) AS pending_leaves FROM hostel_leaves WHERE hostel_id = $1 AND status = 'Pending';`;
+      
+      // Recent leaves
+      const recentLeavesQuery = `
+        SELECT hl.*, u.full_name, u.roll_number 
+        FROM hostel_leaves hl
+        JOIN users u ON hl.user_id = u.user_id
+        WHERE hl.hostel_id = $1
+        ORDER BY hl.created_at DESC
+        LIMIT 5;
+      `;
+
+      // Staff directory
+      const staffQuery = `
+        SELECT u.user_id, u.full_name, u.email, u.designation, r.role_name
+        FROM users u
+        JOIN user_hostel_roles uhr ON u.user_id = uhr.user_id
+        JOIN roles r ON uhr.role_id = r.role_id
+        WHERE uhr.hostel_id = $1 AND (r.role_name = 'nodal_officer' OR (r.role_name = 'student' AND u.designation IS NOT NULL AND u.designation != ''))
+        ORDER BY 
+          CASE WHEN r.role_name = 'nodal_officer' THEN 1 ELSE 2 END,
+          u.designation, u.full_name;
+      `;
+
+      // Recent tickets
+      const recentTicketsQuery = `
+        SELECT g.ticket_id, g.title, g.status, g.category, g.created_at, u.full_name AS submitted_by_name
+        FROM grievances g
+        LEFT JOIN users u ON g.submitted_by_id = u.user_id
+        WHERE g.hostel_id = $1
+        ORDER BY g.created_at DESC
+        LIMIT 10;
+      `;
+
+      const hostelDetailsQuery = `SELECT * FROM hostels WHERE hostel_id = $1`;
+
+      const [statusCountsRes, statusDistributionRes, leavesRes, recentLeavesRes, staffRes, recentTicketsRes, hostelRes] = await Promise.all([
+        pool.query(statusCountsQuery, [hostelId]),
+        pool.query(statusDistributionQuery, [hostelId]),
+        pool.query(leavesQuery, [hostelId]),
+        pool.query(recentLeavesQuery, [hostelId]),
+        pool.query(staffQuery, [hostelId]),
+        pool.query(recentTicketsQuery, [hostelId]),
+        pool.query(hostelDetailsQuery, [hostelId])
+      ]);
+
+      res.json({
+        hostel: hostelRes.rows[0],
+        kpis: { ...statusCountsRes.rows[0], pending_leaves: leavesRes.rows[0].pending_leaves },
+        byStatus: statusDistributionRes.rows,
+        recentLeaves: recentLeavesRes.rows,
+        staffDirectory: staffRes.rows,
+        recentTickets: recentTicketsRes.rows
+      });
 
     } catch (err) {
       console.error(err.message);
@@ -308,12 +455,12 @@ router.post('/triage-grievance', [auth, isAdmin], async (req, res) => {
           );
           const setupUrl = `${process.env.CLIENT_URL}/set-password/${setupToken}`;
           const emailMessage = `
-              <h2>Welcome to the DTU Grievance Portal!</h2>
+              <h2>Welcome to the DTU Hostel Management Portal!</h2>
               <p>An administrator has created or re-sent an invite for your account.</p>
               <p>Please click the link below to set your password. This link is valid for 24 hours.</p>
               <a href="${setupUrl}" style="background-color: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">Set Your Password</a>
           `;
-          await sendEmail({ to: email, subject: 'Activate Your DTU Grievance Portal Account', html: emailMessage });
+          await sendEmail({ to: email, subject: 'Activate Your DTU Hostel Management Account', html: emailMessage });
           res.json({ msg: `Invite resent successfully to ${fullName}.` });
 
       } catch (err) {
@@ -328,8 +475,6 @@ router.post('/triage-grievance', [auth, isAdmin], async (req, res) => {
 router.get('/grievances/filter', [auth, isAdmin], async (req, res) => {
     const { type, value } = req.query; 
 
-    // 1. DYNAMIC QUERY CONSTRUCTION
-    // FIX: Using 'submitted_by_id' based on your schema screenshot
     const baseQuery = `
         SELECT 
             g.grievance_id, 
@@ -361,7 +506,6 @@ router.get('/grievances/filter', [auth, isAdmin], async (req, res) => {
         const filteredGrievances = await pool.query(finalQuery, queryParams);
         res.json(filteredGrievances.rows);
     } catch (err) {
-        // 2. ENHANCED ERROR LOGGING
         console.error("----------- SQL ERROR -----------");
         console.error("Query Failed:", finalQuery);
         console.error("Error Message:", err.message);

@@ -5,23 +5,24 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const CreateUserModal = ({ onClose, onUserCreated }) => {
-    const [formData, setFormData] = useState({ fullName: '', email: '', roleId: '', departmentId: '' });
+    const [formData, setFormData] = useState({ fullName: '', email: '', roleId: '', hostelId: '', designation: '' });
     const [roles, setRoles] = useState([]);
-    const [departments, setDepartments] = useState([]);
+    const [hostels, setHostels] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Fetch roles and departments when the modal first opens
+    const designationOptions = ['Warden', 'Attendant', 'Council Member', 'Officer In-charge, Hostel Office'];
+
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [rolesRes, deptsRes] = await Promise.all([
+                const [rolesRes, hostelsRes] = await Promise.all([
                     axios.get('/api/admin/roles'),
-                    axios.get('/api/admin/departments')
+                    axios.get('/api/admin/hostels')
                 ]);
                 setRoles(rolesRes.data);
-                setDepartments(deptsRes.data);
+                setHostels(hostelsRes.data);
             } catch (error) {
-                toast.error('Failed to load roles or departments.');
+                toast.error('Failed to load roles or hostels.');
             } finally {
                 setLoading(false);
             }
@@ -29,19 +30,28 @@ const CreateUserModal = ({ onClose, onUserCreated }) => {
         fetchData();
     }, []);
 
-    const { fullName, email, roleId, departmentId } = formData;
+    const { fullName, email, roleId, hostelId, designation } = formData;
     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+    const selectedRoleName = roles.find(r => r.role_id === parseInt(roleId))?.role_name;
+    const needsHostel = selectedRoleName === 'nodal_officer';
+    const needsDesignation = selectedRoleName === 'nodal_officer' || selectedRoleName === 'super_admin';
 
     const onSubmit = async e => {
         e.preventDefault();
         try {
             const res = await axios.post('/api/admin/create-user', formData);
             toast.success(res.data.msg);
-            onUserCreated(); // Refreshes the user list in the parent component
-            onClose();       // Closes the modal
+            onUserCreated();
+            onClose();
         } catch (err) {
             toast.error(err.response?.data?.msg || 'Failed to create user.');
         }
+    };
+
+    const roleDisplayName = (roleName) => {
+        const map = { 'student': 'Resident', 'nodal_officer': 'Hostel Staff', 'super_admin': 'Chief Warden' };
+        return map[roleName] || roleName;
     };
 
     return (
@@ -62,16 +72,38 @@ const CreateUserModal = ({ onClose, onUserCreated }) => {
                             <label className="block text-gray-700 text-sm font-bold mb-2">Assign Role</label>
                             <select name="roleId" value={roleId} onChange={onChange} required className="w-full p-2 border rounded bg-white">
                                 <option value="">Select Role</option>
-                                {roles.map(role => <option key={role.role_id} value={role.role_id}>{role.role_name}</option>)}
+                                {roles.map(role => (
+                                    <option key={role.role_id} value={role.role_id}>
+                                        {roleDisplayName(role.role_name)}
+                                    </option>
+                                ))}
                             </select>
                         </div>
-                        <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-bold mb-2">Assign Department</label>
-                            <select name="departmentId" value={departmentId} onChange={onChange} required className="w-full p-2 border rounded bg-white">
-                                <option value="">Select Department</option>
-                                {departments.map(dept => <option key={dept.department_id} value={dept.department_id}>{dept.name}</option>)}
-                            </select>
-                        </div>
+
+                        {needsHostel && (
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">Assign Hostel</label>
+                                <select name="hostelId" value={hostelId} onChange={onChange} required className="w-full p-2 border rounded bg-white">
+                                    <option value="">Select Hostel</option>
+                                    {hostels.map(h => (
+                                        <option key={h.hostel_id} value={h.hostel_id}>{h.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {needsDesignation && (
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">Designation</label>
+                                <select name="designation" value={designation} onChange={onChange} className="w-full p-2 border rounded bg-white">
+                                    <option value="">Select Designation</option>
+                                    {designationOptions.map(d => (
+                                        <option key={d} value={d}>{d}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
                         <div className="flex justify-end gap-4 mt-6">
                             <button type="button" onClick={onClose} className="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded">
                                 Cancel

@@ -9,13 +9,10 @@ import {
   Clock, 
   CheckCircle, 
   AlertCircle,
-  ChevronUp,   // NEW: Sort Icon
-  ChevronDown, // NEW: Sort Icon
-  // Department Icons
-  Code2, Terminal, Cpu, Zap, Globe, Monitor, Wrench, Factory, 
-  HardHat, FlaskConical, Dna, Leaf, Atom, Calculator, Feather, 
-  Palette, Briefcase, LineChart, Landmark, Building2, Library, 
-  BedDouble, Utensils, BookOpen 
+  ChevronUp,
+  ChevronDown,
+  // Category Icons
+  Zap, HardHat, Leaf, Monitor, Sparkles, Utensils, MoreHorizontal, BookOpen
 } from 'lucide-react';
 
 const MyGrievancesPage = () => {
@@ -129,24 +126,16 @@ const MyGrievancesPage = () => {
     }
   };
 
-  // --- HELPER: DEPARTMENT ICONS (Same as before) ---
-  const getDeptIcon = (deptName) => {
-    const lower = deptName.toLowerCase();
-    if (lower.includes('mechanical')) return <Wrench size={18} />;
-    if (lower.includes('production')) return <Factory size={18} />;
-    if (lower.includes('software')) return <Terminal size={18} />;
-    if (lower.includes('civil')) return <HardHat size={18} />;
-    if (lower.includes('chemical')) return <FlaskConical size={18} />;
-    if (lower.includes('bio')) return <Dna size={18} />;
-    if (lower.includes('computer')) return <Code2 size={18} />;
-    if (lower.includes('it') || lower.includes('info')) return <Globe size={18} />;
-    if (lower.includes('electronics')) return <Cpu size={18} />;
+  // --- HELPER: CATEGORY ICONS ---
+  const getCategoryIcon = (catName) => {
+    const lower = catName.toLowerCase();
     if (lower.includes('electrical')) return <Zap size={18} />;
-    if (lower.includes('hostel')) return <BedDouble size={18} />;
-    if (lower.includes('library')) return <Library size={18} />;
-    if (lower.includes('mess') || lower.includes('food')) return <Utensils size={18} />;
-    if (lower.includes('admin')) return <Building2 size={18} />;
-    if (lower.includes('account')) return <Landmark size={18} />;
+    if (lower.includes('civil')) return <HardHat size={18} />;
+    if (lower.includes('horticulture')) return <Leaf size={18} />;
+    if (lower.includes('computer')) return <Monitor size={18} />;
+    if (lower.includes('cleanliness')) return <Sparkles size={18} />;
+    if (lower.includes('mess')) return <Utensils size={18} />;
+    if (lower.includes('other')) return <MoreHorizontal size={18} />;
     return <BookOpen size={18} />;
   };
 
@@ -286,7 +275,7 @@ const MyGrievancesPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                            {getDeptIcon(g.category)}
+                            {getCategoryIcon(g.category)}
                          </div>
                          <span className="text-sm font-medium text-gray-700">{g.category}</span>
                       </div>
