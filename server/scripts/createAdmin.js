@@ -12,8 +12,8 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const pool = require('../db');
 const bcrypt = require('bcryptjs');
 
-const ADMIN_EMAIL = 'rajkumarsingh@dce.ac.in';
-const ADMIN_PASSWORD = 'DtuHostel@2026';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const ADMIN_NAME = 'Prof. Raj Kumar Singh';
 const ADMIN_DESIGNATION = 'Chief Warden';
 
