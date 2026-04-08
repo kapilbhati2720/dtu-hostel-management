@@ -1,127 +1,60 @@
-# DTU Grievance Redressal Management (GRM) Portal 🏛️
+# DTU Hostel Management System
 
-An enterprise-grade, centralized platform built for Delhi Technological University (DTU) to streamline, track, and resolve campus issues. Designed to replace fragmented email chains and paper trails with a transparent, accountable, and SLA-driven ecosystem.
+A comprehensive, full-stack progressive web application (PWA) designed to streamline hostel administration, student grievances, leave applications, and real-time announcements at Delhi Technological University (DTU).
 
-## 🚀 The Core Problem & Our Solution
+## 🚀 Key Features
 
-Historically, campus issues (from broken hostel infrastructure to severe disciplinary matters) vanished into administrative "black holes."
+* **Role-Based Access Control (RBAC):** Three distinct tiers:
+  * **Chief Warden (Super Admin):** Global analytics, cross-hostel visibility, and ultimate moderation.
+  * **Hostel Staff (Warden / Attendant / Council):** Hostel-scoped dashboard to manage local grievances, approve leaves, and post announcements.
+  * **Resident (Student):** User-friendly portal to file complaints, apply for leaves, and view hostel notices.
+* **Smart Grievance Support:** Integrated with Google Gemini AI to detect duplicate complaints and streamline the reporting process.
+* **Leave Management:** End-to-end gate pass application system with bulk-approval capabilities for staff.
+* **Real-Time Announcements:** Live notice board powered by Socket.io, featuring urgent alerts and pinned circulars.
+* **Progressive Web App (PWA):** Fully mobile-optimized. Students can install the portal directly to their iOS/Android home screens.
+* **Advanced Analytics:** Comprehensive Chief Warden dashboard with Recharts-powered data visualization for SLA tracking and efficiency metrics.
 
-**DTU GRM** solves this by introducing:
+## 🛠️ Tech Stack
 
-1. **Strict Accountability:** Automated Service Level Agreements (SLAs) ensure tickets are escalated if ignored.
-2. **Transparency:** Students can track the exact status, assignee, and timeline of their reports.
-3. **Data Security:** Highly sensitive complaints (ICC/EOC) are air-gapped from public feeds and AI processing to protect student identities.
+* **Frontend:** React.js, Vite, Tailwind CSS, Recharts
+* **Backend:** Node.js, Express.js, Socket.io
+* **Database:** PostgreSQL (Hosted on Neon)
+* **Security:** Helmet, Express Rate Limit, JWT Authentication
+* **AI Integration:** Google Gemini API
 
----
+## ⚙️ Local Setup & Installation
 
-## ✨ Enterprise Features
-
-### 🛡️ Air-Gapped Anonymous Reporting (Data Privacy)
-
-* **Contextual Routing:** Sensitive issues are routed exclusively to the Equal Opportunity Cell (EOC) or Internal Complaints Committee (ICC).
-* **DTO Masking:** Backend Data Transfer Objects (DTOs) dynamically scrub student identities (`"Anonymous Student"`) before payloads reach the frontend.
-* **AI Bypass:** Secure tickets bypass the AI embedding generation pipeline to comply with strict data privacy standards.
-
-### 🧠 AI-Powered Smart Deduplication
-
-* Prevents portal spam by using Vector Embeddings to semantically match new grievances against existing open tickets.
-* Promotes a **Community Upvote/Petition** system, allowing multiple students to follow a single high-impact issue rather than creating duplicates.
-
-### ⏱️ SLA & Automated Cron Engine
-
-* Background worker processes automatically flag tickets that breach their 48-72 hour SLAs.
-* Automated cleanup workers purge unverified, abandoned user accounts to maintain database health.
-
-### ⚡ Real-Time Operations
-
-* **WebSockets (Socket.io):** Instant browser notifications for status changes, comments, and escalations.
-* **Role-Based Access Control (RBAC):** Strict contextual roles mapping Super Admins, Departmental Nodal Officers, and Students to their authorized domains.
-
----
-
-## 🛠️ System Architecture & Tech Stack
-
-* **Frontend:** React.js, Vite, Tailwind CSS, Lucide Icons (Responsive, State-Driven Themed UI).
-* **Backend:** Node.js, Express.js (REST API + WebSocket layer).
-* **Database:** PostgreSQL (Relational schema enforcing strict constraints and contextual RBAC).
-* **Storage:** Cloudinary (For optimized evidence/attachment hosting).
-* **AI Services:** Vector Embedding Generation for semantic search.
-* **Background Jobs:** Node-Cron for SLA monitoring.
-
----
-
-## 🚀 Local Development Setup
-
-### 1. Prerequisites
-
-* Node.js (v18+)
-* PostgreSQL running locally or via cloud (e.g., Supabase/Neon).
-* Cloudinary Account (for file uploads).
-
-### 2. Installation
-
-Clone the repository and install dependencies for both client and server:
-
+### 1. Clone the repository
 ```bash
-git clone https://github.com/kapilbhati2720/dtu-grm-portal.git
-cd dtu-grm-portal
+git clone [https://github.com/kapilbhati2720/dtu-hostel-management.git](https://github.com/kapilbhati2720/dtu-hostel-management.git)
+cd dtu-hostel-management
+```
 
-# Install Backend dependencies
-cd server
+### 2. Install Dependencies
+This project uses `concurrently` to run both the client and server simultaneously. Install root, server, and client dependencies:
+```bash
 npm install
-
-# Install Frontend dependencies
-cd ../client
-npm install
+cd server && npm install
+cd ../client && npm install
+cd ..
 ```
 
 ### 3. Environment Variables
-
-Create a `.env` file in the `/server` directory:
-
+Create a `.env` file in the `server` directory and add the following keys:
 ```env
-# Database & Auth
-DATABASE_URL=postgresql://user:password@localhost:5432/dtu_grm
-JWT_SECRET=your_super_secret_jwt_key
-
-# Email SMTP (e.g., Mailtrap for testing)
-MAIL_HOST=sandbox.smtp.mailtrap.io
-MAIL_PORT=2525
-MAIL_USER=your_mail_user
-MAIL_PASS=your_mail_pass
-
-# Media Storage
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-# AI Embedding Service
-AI_API_KEY=your_ai_service_key
+PORT=5000
+DATABASE_URL=your_neon_postgres_connection_string
+JWT_SECRET=your_secure_jwt_secret
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
-### 4. Running the Application
-
-From the root directory, start both the React frontend and Node backend concurrently:
-
+### 4. Run the Application
+From the root directory, start both the backend and frontend dev servers:
 ```bash
 npm run dev
 ```
+* **Frontend:** `http://localhost:5173`
+* **Backend:** `http://localhost:5000`
 
----
-
-## 🗺️ Roadmap (Current Sprint)
-
-* [x] Epic 1: Core Ticketing & Auth
-* [x] Epic 2: Real-time Notifications & File Uploads
-* [x] Epic 3: AI Deduplication & Community Upvoting
-* [x] Epic 4: Verified Anonymous Reporting (Air-gapped)
-* [ ] **Epic 5: Super Admin Analytics & Secure Provisioning (In Progress)**
-  * God-view analytical dashboard (OLAP queries).
-  * Secure invitation workflow for provisioning new faculty accounts.
-  * CSV/Excel export for compliance reporting.
-
----
-
-*Built for Delhi Technological University.*
-
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kapilbhati2720/dtu-grm-portal)
+## 🏗️ Project Structure
+Default testing data and routing are currently configured for **JCB Boys Hostel (Sir J.C. BOSE Hostel)** for development purposes.
