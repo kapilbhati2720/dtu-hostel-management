@@ -16,47 +16,47 @@ const startCleanupWorker = require('./cron/cleanupWorker');
 
 const app = express();
 const server = http.createServer(app); 
-const allowedOrigins = [
-  "http://localhost:5173", 
-  "http://localhost:5174",
-  "https://dtu-hostel-management.vercel.app", // main Vercel URL
-  process.env.CLIENT_URL
-].filter(Boolean); // Removes undefined values
 
+// const allowedOrigins = [
+//   "http://localhost:5173", 
+//   "http://localhost:5174",
+//   "https://dtu-hostel-management.vercel.app", // main Vercel URL
+//   process.env.CLIENT_URL
+// ].filter(Boolean); // Removes undefined values
+
+// --- THE NUCLEAR CORS FIX ---
 const corsOptions = {
+  // Forcefully allow any origin to connect (Vercel, localhost, etc.)
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    
-    // Allow listed origins OR any Vercel preview branch deployment
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    callback(null, true); 
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
 };
 
-const io = new Server(server, {
-  cors: corsOptions
-});
+const io = new Server(server, { cors: corsOptions });
 
-// Security Middleware (Helmet + Dynamic CORS + Rate Limit)
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" } // Required to allow images to load across ports
-}));
+// 1. CORS MUST BE THE VERY FIRST MIDDLEWARE
 app.use(cors(corsOptions));
 
+// 2. EXPLICITLY INTERCEPT ALL PREFLIGHT 'OPTIONS' REQUESTS INSTANTLY
+app.options('*', cors(corsOptions));
+
+// 3. NOW WE APPLY SECURITY AND LIMITERS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" } 
+}));
+
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 1000,                // 1000 requests per window
+    windowMs: 15 * 60 * 1000, 
+    max: 1000,                
     standardHeaders: true,
     legacyHeaders: false,
     message: { msg: "Too many requests from this IP, please try again after 15 minutes" }
 });
 app.use('/api/', limiter);
+
 
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
