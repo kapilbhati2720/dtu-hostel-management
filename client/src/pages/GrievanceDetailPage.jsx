@@ -3,6 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { AuthContext } from '../context/AuthContext';
+
+// Use Vite environment variable, fallback to localhost for local development
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 import { 
     Clock, 
     Paperclip, 
@@ -58,8 +61,7 @@ const GrievanceDetailPage = () => {
             return path;
         }
         // If it's a local path, prepend the backend server URL
-        // Adjust 'http://localhost:5000/' if your backend runs on a different port
-        return `http://localhost:5000/${path.replace(/^\//, '')}`;
+        return `${API_BASE_URL}/${path.replace(/^\//, '')}`;
     };
 
     // 1. Fetch Data

@@ -2,6 +2,9 @@ import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+
+// Use Vite environment variable, fallback to localhost for local development
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 import { 
   FileText, 
   Plus, 
@@ -32,7 +35,7 @@ const DashboardPage = () => {
     const fetchStats = async () => {
       try {
         // Ensure this endpoint exists in your backend!
-        const res = await axios.get('http://localhost:5000/api/grievances/stats'); 
+        const res = await axios.get(`${API_BASE_URL}/api/grievances/stats`);
         setStats(res.data);
       } catch (err) {
         console.error("Failed to load dashboard stats", err);
