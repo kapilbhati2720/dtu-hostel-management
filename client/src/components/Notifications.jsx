@@ -6,9 +6,8 @@ import axios from 'axios';
 import { toast } from 'react-toastify'; 
 import io from 'socket.io-client';
 
-// Configure the socket connection (point to your backend URL)
-const socket = io('http://localhost:5000', {
-  autoConnect: false // We will connect manually when the user is available
+const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
+  autoConnect: false
 });
 
 const Notifications = () => {
@@ -67,7 +66,7 @@ const Notifications = () => {
 
     if (!notification.is_read) {
       try {
-        await axios.put(`http://localhost:5000/api/notifications/${notification.notification_id}/read`);
+        await axios.put(`/api/notifications/${notification.notification_id}/read`);
         await fetchNotifications(); 
       } catch (err) {
         console.error("Failed to mark notification as read", err);

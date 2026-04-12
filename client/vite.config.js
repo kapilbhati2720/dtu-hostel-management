@@ -32,13 +32,13 @@ export default defineConfig({
     proxy: {
       // 1. Forward API requests
       '/api': {
-        target: 'http://localhost:5000',
+        target: `http://localhost:5001`,
         changeOrigin: true,
         secure: false,
       },
       // 2. Forward file/image requests to backend
       '/uploads': {
-        target: 'http://localhost:5000',
+        target: `http://localhost:5001`,
         changeOrigin: true,
         secure: false,
       }

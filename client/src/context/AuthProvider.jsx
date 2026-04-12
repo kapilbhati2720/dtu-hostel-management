@@ -5,7 +5,7 @@ import { jwtDecode } from 'jwt-decode';
 import { AuthContext } from './AuthContext';
 import { toast } from 'react-toastify';
 
-const socket = io('http://localhost:5000', { autoConnect: false });
+const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', { autoConnect: false });
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
   const fetchNotifications = useCallback(async () => {
     try {
       if (!localStorage.getItem('token')) return;
-      const res = await axios.get('http://localhost:5000/api/notifications');
+      const res = await axios.get('/api/notifications');
       setNotifications(res.data);
       setUnreadCount(res.data.filter(n => !n.is_read).length);
     } catch (err) {
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
     if (storedToken) {
       setAuthToken(storedToken);
       try {
-        const res = await axios.get('http://localhost:5000/api/auth');
+        const res = await axios.get('/api/auth');
         setUser(res.data);
         setIsAuthenticated(true);
         socket.connect();
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
     const config = { headers: { 'Content-Type': 'application/json' } };
     try {
       // 1. Post to backend
-      const res = await axios.post('http://localhost:5000/api/auth/register', formData, config);
+      const res = await axios.post('/api/auth/register', formData, config);
       
       // 2. Set Token immediately (Auto-login)
       setAuthToken(res.data.token);
@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }) => {
     const config = { headers: { 'Content-Type': 'application/json' } };
     const body = JSON.stringify({ email, password });
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', body, config);
+      const res = await axios.post('/api/auth/login', body, config);
       setAuthToken(res.data.token);
       
       const decodedUser = jwtDecode(res.data.token).user;

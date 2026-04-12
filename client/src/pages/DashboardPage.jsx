@@ -32,7 +32,7 @@ const DashboardPage = () => {
     const fetchStats = async () => {
       try {
         // Ensure this endpoint exists in your backend!
-        const res = await axios.get('http://localhost:5000/api/grievances/stats'); 
+        const res = await axios.get('/api/grievances/stats');
         setStats(res.data);
       } catch (err) {
         console.error("Failed to load dashboard stats", err);

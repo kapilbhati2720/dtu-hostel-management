@@ -53,13 +53,11 @@ const GrievanceDetailPage = () => {
     // --- HELPER: Fix Broken Attachment Links ---
     const getFileUrl = (path) => {
         if (!path) return '#';
-        // If it's already a full URL (Cloudinary), return it
         if (path.startsWith('http') || path.startsWith('https')) {
             return path;
         }
-        // If it's a local path, prepend the backend server URL
-        // Adjust 'http://localhost:5000/' if your backend runs on a different port
-        return `http://localhost:5000/${path.replace(/^\//, '')}`;
+        const base = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        return `${base}/${path.replace(/^\//, '')}`;
     };
 
     // 1. Fetch Data

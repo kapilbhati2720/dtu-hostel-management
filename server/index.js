@@ -6,7 +6,8 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const { Server } = require("socket.io");
-require('./db');
+const bcrypt = require('bcryptjs');
+const pool = require('./db');
 
 // --- BACKGROUND WORKERS ---
 
@@ -85,10 +86,26 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
     console.log(`🚀 Server is running on port ${PORT}`);
-    
-    // Initialize background engines ONLY after successful server boot
+
+    // Auto-sync admin credentials from .env on every boot
+    try {
+        const adminEmail = process.env.ADMIN_EMAIL;
+        const adminPassword = process.env.ADMIN_PASSWORD;
+        if (adminEmail && adminPassword) {
+            const salt = await bcrypt.genSalt(10);
+            const hash = await bcrypt.hash(adminPassword, salt);
+            await pool.query(
+                `UPDATE users SET password_hash = $1, is_verified = TRUE, is_active = TRUE WHERE email = $2`,
+                [hash, adminEmail]
+            );
+            console.log(`🔐 Admin credentials synced for: ${adminEmail}`);
+        }
+    } catch (e) {
+        console.error('Admin sync warning (non-critical):', e.message);
+    }
+
     startSLAWorker();
     startCleanupWorker();
 });
