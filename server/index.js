@@ -16,20 +16,38 @@ const startCleanupWorker = require('./cron/cleanupWorker');
 
 const app = express();
 const server = http.createServer(app); 
-const allowedOrigins = process.env.CLIENT_URL ? [process.env.CLIENT_URL] : ["http://localhost:5173", "http://localhost:5174"];
+const allowedOrigins = [
+  "http://localhost:5173", 
+  "http://localhost:5174",
+  "https://dtu-hostel-management.vercel.app", // main Vercel URL
+  process.env.CLIENT_URL
+].filter(Boolean); // Removes undefined values
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    
+    // Allow listed origins OR any Vercel preview branch deployment
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
+};
 
 const io = new Server(server, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ["GET", "POST", "PUT"]
-  }
+  cors: corsOptions
 });
 
 // Security Middleware (Helmet + Dynamic CORS + Rate Limit)
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" } // Required to allow images to load across ports
 }));
-app.use(cors({ origin: allowedOrigins }));
+app.use(cors(corsOptions));
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
