@@ -15,12 +15,15 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  Building2
 } from 'lucide-react';
 
 const DashboardPage = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const hostelName = user?.roles?.find(r => r.hostel_name)?.hostel_name || null;
 
   // State for grievance statistics
   const [stats, setStats] = useState({
@@ -85,7 +88,7 @@ const DashboardPage = () => {
           <div className="px-8 py-6 bg-white">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Resident Profile</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 
                 {/* Roll Number */}
                 <div className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
@@ -130,6 +133,21 @@ const DashboardPage = () => {
                         <p className="font-bold text-gray-900 mt-0.5 break-all text-sm leading-tight">
                             {user.email}
                         </p>
+                    </div>
+                </div>
+
+                {/* Allotted Hostel */}
+                <div className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                    <div className="p-2.5 bg-teal-50 text-teal-600 rounded-lg shrink-0">
+                        <Building2 size={20} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <p className="text-xs text-gray-500 font-medium uppercase">Allotted Hostel</p>
+                        {hostelName ? (
+                            <p className="font-bold text-gray-900 mt-0.5 text-sm leading-tight">{hostelName}</p>
+                        ) : (
+                            <p className="font-bold text-gray-400 mt-0.5 text-sm italic">Not Allotted</p>
+                        )}
                     </div>
                 </div>
 
