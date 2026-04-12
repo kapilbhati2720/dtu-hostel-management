@@ -15,24 +15,16 @@ const startCleanupWorker = require('./cron/cleanupWorker');
 
 const app = express();
 const server = http.createServer(app); 
-const allowedOrigins = [
-  "http://localhost:5173", 
-  "http://localhost:5174",
-  "https://dtu-hostel-management.vercel.app", // main Vercel URL
-  process.env.CLIENT_URL
-].filter(Boolean); // Removes undefined values
+
+// const allowedOrigins = [
+//   "http://localhost:5173", 
+//   "http://localhost:5174",
+//   "https://dtu-hostel-management.vercel.app", // main Vercel URL
+//   process.env.CLIENT_URL
+// ].filter(Boolean); // Removes undefined values
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    
-    // Allow listed origins OR any Vercel preview branch deployment
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true, // This tells CORS to dynamically reflect and allow the incoming Origin header
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
