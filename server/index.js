@@ -17,19 +17,15 @@ const startCleanupWorker = require('./cron/cleanupWorker');
 const app = express();
 const server = http.createServer(app); 
 
-// const allowedOrigins = [
-//   "http://localhost:5173", 
-//   "http://localhost:5174",
-//   "https://dtu-hostel-management.vercel.app", // main Vercel URL
-//   process.env.CLIENT_URL
-// ].filter(Boolean); // Removes undefined values
+const allowedOrigins = [
+  "http://localhost:5173", 
+  "http://localhost:5174",
+  "https://dtu-hostel-management.vercel.app", // main Vercel URL
+  process.env.CLIENT_URL
+].filter(Boolean); // Removes undefined values
 
-// --- THE NUCLEAR CORS FIX ---
 const corsOptions = {
-  // Forcefully allow any origin to connect (Vercel, localhost, etc.)
-  origin: function (origin, callback) {
-    callback(null, true); 
-  },
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
@@ -38,12 +34,10 @@ const corsOptions = {
 const io = new Server(server, { cors: corsOptions });
 
 // 1. CORS MUST BE THE VERY FIRST MIDDLEWARE
+// This intercepts all preflight requests automatically, so app.options() is no longer needed
 app.use(cors(corsOptions));
 
-// 2. EXPLICITLY INTERCEPT ALL PREFLIGHT 'OPTIONS' REQUESTS INSTANTLY
-app.options('*', cors(corsOptions));
-
-// 3. NOW WE APPLY SECURITY AND LIMITERS
+// 2. NOW WE APPLY SECURITY AND LIMITERS
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" } 
 }));
