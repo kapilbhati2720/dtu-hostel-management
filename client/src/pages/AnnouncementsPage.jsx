@@ -17,6 +17,15 @@ const AnnouncementsPage = () => {
     const isStaff = user?.roles?.some(r => r.role_name === 'nodal_officer' || r.role_name === 'super_admin');
     const isSuperAdmin = user?.roles?.some(r => r.role_name === 'super_admin');
 
+    // ONLY allow wardens to post in their assigned hostels
+    const allowedHostelIds = isSuperAdmin 
+        ? null 
+        : user?.roles?.filter(r => r.role_name === 'nodal_officer').map(r => r.hostel_id) || [];
+
+    const selectableHostels = isSuperAdmin 
+        ? hostels 
+        : hostels.filter(h => allowedHostelIds.includes(h.hostel_id));
+
     useEffect(() => {
         fetchAnnouncements();
         if (isStaff) fetchHostels();
@@ -37,6 +46,14 @@ const AnnouncementsPage = () => {
         try {
             const res = await axios.get('/api/hostels');
             setHostels(res.data);
+            
+            // Auto-select the first allowed hostel for non-super-admins
+            if (!isSuperAdmin && res.data) {
+                const wardenHostels = res.data.filter(h => allowedHostelIds.includes(h.hostel_id));
+                if (wardenHostels.length > 0) {
+                    setFormData(prev => ({ ...prev, hostelId: wardenHostels[0].hostel_id }));
+                }
+            }
         } catch (err) {}
     };
 
@@ -46,7 +63,10 @@ const AnnouncementsPage = () => {
             const res = await axios.post('/api/announcements', formData);
             toast.success(res.data.msg);
             setShowForm(false);
-            setFormData({ hostelId: '', title: '', body: '', priority: 'Normal', isPinned: false });
+            
+            // Reset to default
+            const defaultHostelId = (!isSuperAdmin && selectableHostels.length > 0) ? selectableHostels[0].hostel_id : '';
+            setFormData({ hostelId: defaultHostelId, title: '', body: '', priority: 'Normal', isPinned: false });
             fetchAnnouncements();
         } catch (err) {
             toast.error(err.response?.data?.msg || 'Failed to post announcement.');
@@ -94,10 +114,12 @@ const AnnouncementsPage = () => {
                                     <select
                                         value={formData.hostelId}
                                         onChange={e => setFormData({...formData, hostelId: e.target.value})}
+                                        required={!isSuperAdmin}
                                         className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none"
                                     >
-                                        <option value="">All Hostels (Global)</option>
-                                        {hostels.map(h => (
+                                        {isSuperAdmin && <option value="">All Hostels (Global)</option>}
+                                        {!isSuperAdmin && <option value="" disabled>-- Select Your Hostel --</option>}
+                                        {selectableHostels.map(h => (
                                             <option key={h.hostel_id} value={h.hostel_id}>{h.name}</option>
                                         ))}
                                     </select>

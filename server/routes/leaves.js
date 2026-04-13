@@ -109,6 +109,36 @@ module.exports = function(io, onlineUsers) {
     // STAFF ROUTES
     // ================================================================
 
+    // @route   GET /api/leaves/all
+    // @desc    Get all leave requests across all hostels (Chief Warden / super_admin only)
+    // @access  Private (super_admin)
+    router.get('/all', auth, async (req, res) => {
+        const isSuperAdmin = req.user.roles.some(r => r.role_name === 'super_admin');
+        if (!isSuperAdmin) {
+            return res.status(403).json({ msg: 'Access denied. Chief Warden role required.' });
+        }
+
+        try {
+            const result = await pool.query(`
+                SELECT l.*,
+                       u.full_name  AS applicant_name,
+                       u.roll_number,
+                       u.email      AS applicant_email,
+                       h.name       AS hostel_name,
+                       rv.full_name AS reviewed_by_name
+                FROM hostel_leaves l
+                JOIN users  u  ON l.user_id    = u.user_id
+                JOIN hostels h ON l.hostel_id  = h.hostel_id
+                LEFT JOIN users rv ON l.reviewed_by = rv.user_id
+                ORDER BY l.created_at DESC
+            `);
+            res.json(result.rows);
+        } catch (err) {
+            console.error('All-leaves error:', err.message);
+            res.status(500).send('Server Error');
+        }
+    });
+
     // @route   GET /api/leaves/hostel/:hostelId
     // @desc    Get all leave requests for a specific hostel
     // @access  Private (Officer / Admin)

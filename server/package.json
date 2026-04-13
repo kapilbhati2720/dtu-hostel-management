@@ -5,9 +5,11 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "predev": "lsof -ti:5001 | xargs kill -9 || true",
     "dev": "nodemon index.js",
     "db:seed": "node scripts/seed.js",
-    "create-admin": "node scripts/createAdmin.js"
+    "create-admin": "node scripts/createAdmin.js",
+    "reset-admin": "node scripts/resetAdminPassword.js"
   },
   "keywords": [],
   "author": "",

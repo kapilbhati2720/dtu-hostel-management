@@ -42,6 +42,24 @@ module.exports = function(io, onlineUsers) {
         }
 
         try {
+            // Check if user is super admin
+            const isSuperAdmin = req.user.roles.some(r => r.role_name === 'super_admin');
+            
+            // If they are not super admin, they MUST select a hostel, and it MUST be one they are assigned to
+            if (!isSuperAdmin) {
+                if (!hostelId) {
+                    return res.status(403).json({ msg: 'Wardens must select a specific hostel to post to. Global announcements are restricted.' });
+                }
+                
+                const allowedHostelIds = req.user.roles
+                    .filter(r => r.role_name === 'nodal_officer')
+                    .map(r => r.hostel_id);
+                
+                if (!allowedHostelIds.includes(parseInt(hostelId))) {
+                    return res.status(403).json({ msg: 'You do not have permission to post announcements for this hostel.' });
+                }
+            }
+
             const result = await pool.query(
                 `INSERT INTO announcements (hostel_id, posted_by, title, body, priority, is_pinned)
                  VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,

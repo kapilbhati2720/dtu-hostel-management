@@ -36,14 +36,16 @@ const StaffLeavesPage = () => {
             const res = await axios.get('/api/hostels');
             let availableHostels = res.data;
             
-            // Filter hostels if not Chief Warden
             if (!isChiefWarden) {
                 const assignedHostelIds = user.roles.filter(r => r.hostel_id).map(r => r.hostel_id);
                 availableHostels = availableHostels.filter(h => assignedHostelIds.includes(h.hostel_id));
             }
             
             setHostels(availableHostels);
-            if (availableHostels.length > 0) {
+
+            if (isChiefWarden) {
+                setSelectedHostelId('all');
+            } else if (availableHostels.length > 0) {
                 setSelectedHostelId(availableHostels[0].hostel_id);
             } else {
                 setLoading(false);
@@ -57,7 +59,10 @@ const StaffLeavesPage = () => {
     const fetchLeaves = async (hostelId) => {
         setLoading(true);
         try {
-            const res = await axios.get(`/api/leaves/hostel/${hostelId}`);
+            const url = hostelId === 'all'
+                ? '/api/leaves/all'
+                : `/api/leaves/hostel/${hostelId}`;
+            const res = await axios.get(url);
             setLeaves(res.data);
         } catch (err) {
             console.error("Failed to fetch leaves:", err);
@@ -74,8 +79,12 @@ const StaffLeavesPage = () => {
             return;
         }
 
-        if (window.confirm(`Are you sure you want to BULK APPROVE ${pendingCount} pending leave applications for this hostel?`)) {
+        if (window.confirm(`Are you sure you want to BULK APPROVE ${pendingCount} pending leave applications?`)) {
             try {
+                if (selectedHostelId === 'all') {
+                    toast.info("Bulk approve is not available for All Hostels view. Please select a specific hostel.");
+                    return;
+                }
                 const res = await axios.put(`/api/leaves/hostel/${selectedHostelId}/approve-all`);
                 toast.success(res.data.msg);
                 fetchLeaves(selectedHostelId);
@@ -151,8 +160,10 @@ const StaffLeavesPage = () => {
                             value={selectedHostelId} 
                             onChange={(e) => setSelectedHostelId(e.target.value)}
                             className="p-2 border border-gray-200 rounded-lg bg-gray-50 text-sm w-full md:w-64 outline-none focus:ring-2 focus:ring-blue-500"
-                            disabled={hostels.length <= 1}
                         >
+                            {isChiefWarden && (
+                                <option value="all">All Hostels</option>
+                            )}
                             {hostels.map(h => <option key={h.hostel_id} value={h.hostel_id}>{h.name}</option>)}
                         </select>
                     </div>
@@ -177,7 +188,7 @@ const StaffLeavesPage = () => {
                     <div className="bg-white rounded-2xl p-20 text-center border border-gray-100 shadow-sm">
                         <FileText size={48} className="mx-auto text-gray-300 mb-4" />
                         <h3 className="text-xl font-bold text-gray-700">No Applications Found</h3>
-                        <p className="text-gray-400 mt-2">There are no {filterStatus !== 'All' ? filterStatus.toLowerCase() : ''} leave applications for {hostels.find(h=>h.hostel_id == selectedHostelId)?.name || 'this hostel'}.</p>
+                        <p className="text-gray-400 mt-2">There are no {filterStatus !== 'All' ? filterStatus.toLowerCase() : ''} leave applications for {selectedHostelId === 'all' ? 'any hostel' : hostels.find(h => h.hostel_id == selectedHostelId)?.name || 'this hostel'}.</p>
                     </div>
                 ) : (
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -232,7 +243,7 @@ const StaffLeavesPage = () => {
                                                     </div>
                                                 ) : (
                                                     <span className="text-xs font-semibold text-gray-400">
-                                                        Reviewed by {leave.reviewed_by_name?.split(' ')[0] || 'Admin'}
+                                                        Reviewed by {leave.reviewed_by_name || 'Admin'}
                                                     </span>
                                                 )}
                                             </td>

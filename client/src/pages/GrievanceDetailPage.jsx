@@ -56,7 +56,6 @@ const GrievanceDetailPage = () => {
     // --- HELPER: Fix Broken Attachment Links ---
     const getFileUrl = (path) => {
         if (!path) return '#';
-        // If it's already a full URL (Cloudinary), return it
         if (path.startsWith('http') || path.startsWith('https')) {
             return path;
         }
