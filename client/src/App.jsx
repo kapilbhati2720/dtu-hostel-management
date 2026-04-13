@@ -28,6 +28,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import LeavesPage from './pages/LeavesPage';
 import StaffLeavesPage from './pages/StaffLeavesPage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
+import CommunityIssues from './pages/CommunityIssues';
 
 function App() {
   const { isAuthenticated, user, loading, logout } = useContext(AuthContext);
@@ -95,6 +96,14 @@ function App() {
                       My Leaves
                   </Link>
               )}
+              {/* Community Issues */}
+              <Link 
+                  to="/community-issues" 
+                  className={`font-semibold transition-colors ${location.pathname === '/community-issues' ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'}`}
+              >
+                  Community Issues
+              </Link>
+              
               {location.pathname !== getDashboardPath() && (
                 <Link 
                     to={getDashboardPath()} 
@@ -142,6 +151,7 @@ function App() {
           <Route path="/submit-grievance" element={<PrivateRoute><SubmitGrievancePage /></PrivateRoute>} />
 
           {/* New Module Routes */}
+          <Route path="/community-issues" element={<PrivateRoute><CommunityIssues /></PrivateRoute>} />
           <Route path="/my-leaves" element={<PrivateRoute><LeavesPage /></PrivateRoute>} />
           <Route path="/announcements" element={<PrivateRoute><AnnouncementsPage /></PrivateRoute>} />
 
