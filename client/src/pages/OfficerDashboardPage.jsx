@@ -217,7 +217,7 @@ const OfficerDashboardPage = () => {
                             {trendingIssues.map(issue => (
                                 <Link 
                                     key={issue.ticket_id} 
-                                    to={`/officer/grievance/${issue.ticket_id}`} 
+                                    to={`/staff/grievance/${issue.ticket_id}`} 
                                     className="bg-white rounded-xl shadow-sm border border-orange-200 p-5 hover:shadow-md transition-all border-t-4 border-t-orange-500 flex flex-col justify-between group"
                                 >
                                     <div>
@@ -344,7 +344,7 @@ const OfficerDashboardPage = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <Link 
-                                                    to={`/officer/grievance/${g.ticket_id}`}
+                                                    to={`/staff/grievance/${g.ticket_id}`}
                                                     className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
                                                 >
                                                     Manage
