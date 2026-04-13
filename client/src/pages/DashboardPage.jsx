@@ -128,9 +128,9 @@ const DashboardPage = () => {
                     <div className="p-2.5 bg-green-50 text-green-600 rounded-lg shrink-0">
                         <Mail size={20} />
                     </div>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 overflow-hidden">
                         <p className="text-xs text-gray-500 font-medium uppercase">DTU Email</p>
-                        <p className="font-bold text-gray-900 mt-0.5 break-all text-sm leading-tight">
+                        <p className="font-bold text-gray-900 mt-0.5 text-sm truncate" title={user.email}>
                             {user.email}
                         </p>
                     </div>
