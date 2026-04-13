@@ -153,7 +153,7 @@ const AssignRoleModal = ({ user, onClose, onRoleAssigned }) => {
                                             <div className="text-sm font-bold text-gray-800">
                                                 {roleDisplayName(assignment.roleName)}
                                             </div>
-                                            {assignment.roleName !== 'student' && assignment.roleName !== 'super_admin' && (
+                                            {assignment.roleName !== 'super_admin' && (
                                                 <div className="text-xs text-gray-500">{assignment.hostelName}</div>
                                             )}
                                         </div>
@@ -182,8 +182,8 @@ const AssignRoleModal = ({ user, onClose, onRoleAssigned }) => {
                             </select>
                         </div>
                         
-                        {/* Show hostel dropdown for officer roles */}
-                        {allRoles.find(r => r.role_id === parseInt(selectedRoleId))?.role_name === 'nodal_officer' && (
+                        {/* Show hostel dropdown for all roles except system-wide admins */}
+                        {allRoles.find(r => r.role_id === parseInt(selectedRoleId))?.role_name !== 'super_admin' && (
                             <div className="flex-1 w-full">
                                 <select value={selectedHostelId} onChange={e => setSelectedHostelId(e.target.value)} className="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                                     <option value="">-- Select Hostel --</option>
