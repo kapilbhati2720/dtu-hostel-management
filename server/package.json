@@ -9,7 +9,9 @@
     "dev": "nodemon index.js",
     "db:seed": "node scripts/seed.js",
     "create-admin": "node scripts/createAdmin.js",
-    "reset-admin": "node scripts/resetAdminPassword.js"
+    "reset-admin": "node scripts/resetAdminPassword.js",
+    "db:assign-default-hostel": "node scripts/assignDefaultHostel.js",
+    "db:assign-default-hostel:dry": "node scripts/assignDefaultHostel.js --dry-run"
   },
   "keywords": [],
   "author": "",
