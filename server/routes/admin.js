@@ -515,4 +515,73 @@ router.get('/grievances/filter', [auth, isAdmin], async (req, res) => {
     }
 });
 
+// @route   POST /api/admin/backfill-embeddings
+// @desc    Generate and store Gemini vector embeddings for all grievances that are missing them.
+//          Safe to run multiple times — only processes grievances with NULL embedding.
+// @access  Private (Super Admin only)
+router.post('/backfill-embeddings', [auth, isAdmin], async (req, res) => {
+    const { generateEmbedding } = require('../services/aiService');
+
+    try {
+        // Fetch all grievances missing an embedding
+        const missing = await pool.query(`
+            SELECT grievance_id, ticket_id, title, description
+            FROM grievances
+            WHERE embedding IS NULL
+            ORDER BY created_at ASC
+        `);
+
+        const total = missing.rows.length;
+
+        if (total === 0) {
+            return res.json({ msg: '✅ All grievances already have embeddings. Nothing to do.' });
+        }
+
+        // Stream response is not possible here — return immediately and process in background
+        res.json({
+            msg: `🚀 Backfill started for ${total} grievance(s). Check server logs for progress.`,
+            total
+        });
+
+        // Process asynchronously AFTER responding (non-blocking)
+        (async () => {
+            let success = 0;
+            let failed = 0;
+
+            for (const g of missing.rows) {
+                try {
+                    const text = `${g.title}: ${g.description}`;
+                    const embedding = await generateEmbedding(text);
+
+                    if (embedding) {
+                        await pool.query(
+                            `UPDATE grievances SET embedding = $1 WHERE grievance_id = $2`,
+                            [embedding, g.grievance_id]
+                        );
+                        success++;
+                        console.log(`[Backfill] ✅ ${g.ticket_id} (${success}/${total})`);
+                    } else {
+                        failed++;
+                        console.warn(`[Backfill] ⚠️  ${g.ticket_id} — embedding returned null`);
+                    }
+                } catch (err) {
+                    failed++;
+                    console.error(`[Backfill] ❌ ${g.ticket_id} — ${err.message}`);
+                }
+
+                // Rate-limit: 500ms between Gemini API calls to avoid quota exhaustion
+                await new Promise(r => setTimeout(r, 500));
+            }
+
+            console.log(`[Backfill] 🎉 Complete — ${success} succeeded, ${failed} failed out of ${total} total.`);
+        })();
+
+    } catch (err) {
+        console.error('Backfill error:', err.message);
+        if (!res.headersSent) {
+            res.status(500).send('Server Error');
+        }
+    }
+});
+
 module.exports = router;
