@@ -194,7 +194,20 @@ const runMigration = async () => {
     console.log(`   Role assignments: ${roleAssignments.rows[0].count}`);
     console.log('');
     console.log('🎉 Migration complete! Database is ready.');
-    console.log(`🔑 Default password for all seeded accounts: ${DEFAULT_PASSWORD}`);
+    console.log(`🔑 Default password for all seeded accounts is set via DEFAULT_SEED_PASSWORD env var.`);
+
+  } catch (err) {
+    console.error('');
+    console.error('❌ Migration failed:', err.message);
+    console.error(err.stack);
+  } finally {
+    client.release();
+    await pool.end();
+  }
+};
+
+runMigration();
+DEFAULT_PASSWORD}`);
 
   } catch (err) {
     console.error('');

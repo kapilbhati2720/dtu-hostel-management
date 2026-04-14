@@ -8,6 +8,17 @@ const jwt = require('jsonwebtoken');
 const { parseUserDataFromEmail } = require('../utils/helpers');
 const sendEmail = require('../utils/sendemail');
 
+// Password validation helper — enforces minimum security requirements
+const validatePassword = (password) => {
+  if (!password || typeof password !== 'string') return 'Password is required.';
+  if (password.length < 8) return 'Password must be at least 8 characters long.';
+  if (password.length > 72) return 'Password must not exceed 72 characters.';
+  if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter.';
+  if (!/[a-z]/.test(password)) return 'Password must contain at least one lowercase letter.';
+  if (!/[0-9]/.test(password)) return 'Password must contain at least one number.';
+  return null;
+};
+
 // @route   POST /api/auth/register
 // @desc    Register a new user and send verification email
 router.post('/register', async (req, res) => {
@@ -17,7 +28,10 @@ router.post('/register', async (req, res) => {
   const client = await pool.connect();
 
   try {
-    // 1. Validations (No changes here)
+    // 1. Validations
+    const pwError = validatePassword(password);
+    if (pwError) return res.status(400).json({ msg: pwError });
+
     if (!email.endsWith('@dtu.ac.in') && !email.endsWith('@dce.ac.in')) {
         return res.status(400).json({ msg: 'Please use a valid DTU email address.' });
     }
@@ -38,8 +52,8 @@ router.post('/register', async (req, res) => {
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const tokenExpires = new Date(Date.now() + 3600000 * 24);
 
-    // 3. Insert User (Pending Commit)
-    await pool.query(
+    // 3. Insert User (within transaction via client)
+    await client.query(
         `INSERT INTO users (full_name, email, password_hash, roll_number, admission_year, branch_code, verification_token, verification_token_expires) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [fullName, email, passwordHash, rollNumber, admissionYear, branchCode, verificationToken, tokenExpires]
@@ -208,9 +222,13 @@ router.post('/set-password', async (req, res) => {
     const { token, password } = req.body;
 
     try {
+        // 0. Validate password strength
+        const pwError = validatePassword(password);
+        if (pwError) return res.status(400).json({ msg: pwError });
+
         // 1. Find the user with the matching token that has not expired
         const userRes = await pool.query(
-            "SELECT * FROM users WHERE verification_token = $1",
+            "SELECT * FROM users WHERE verification_token = $1 AND verification_token_expires > NOW()",
             [token]
         );
 
@@ -290,9 +308,12 @@ router.post('/forgot-password', async (req, res) => {
 // @desc    Reset a user's password using a token
 // @access  Public
 router.post('/reset-password', async (req, res) => {
-    // This logic is identical to your /set-password route.
     const { token, password } = req.body;
     try {
+        // Validate password strength
+        const pwError = validatePassword(password);
+        if (pwError) return res.status(400).json({ msg: pwError });
+
         const userRes = await pool.query("SELECT * FROM users WHERE verification_token = $1 AND verification_token_expires > NOW()", [token]);
         if (userRes.rows.length === 0) {
             return res.status(400).json({ msg: 'Invalid or expired token.' });

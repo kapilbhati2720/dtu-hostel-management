@@ -493,13 +493,14 @@ router.get('/grievances/filter', [auth, isAdmin], async (req, res) => {
 
     if (type === 'all') {
         finalQuery = `${baseQuery} ORDER BY g.created_at DESC`;
-    } else {
-        const allowedFilterTypes = ['category', 'status'];
-        if (!allowedFilterTypes.includes(type)) {
-            return res.status(400).json({ msg: 'Invalid filter type.' });
-        }
-        finalQuery = `${baseQuery} WHERE g.${type} = $1 ORDER BY g.created_at DESC`;
+    } else if (type === 'category') {
+        finalQuery = `${baseQuery} WHERE g.category = $1 ORDER BY g.created_at DESC`;
         queryParams = [value];
+    } else if (type === 'status') {
+        finalQuery = `${baseQuery} WHERE g.status = $1 ORDER BY g.created_at DESC`;
+        queryParams = [value];
+    } else {
+        return res.status(400).json({ msg: 'Invalid filter type.' });
     }
     
     try {

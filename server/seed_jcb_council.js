@@ -22,7 +22,11 @@ const councilMembers = [
 async function seedJCB() {
     try {
         const client = await pool.connect();
-        const pwdHash = await bcrypt.hash('password123', 10);
+        const defaultPassword = process.env.DEFAULT_SEED_PASSWORD || 'CHANGE_ME_BEFORE_DEPLOY';
+        if (!process.env.DEFAULT_SEED_PASSWORD) {
+            console.warn('⚠️  WARNING: DEFAULT_SEED_PASSWORD not set in .env — using insecure fallback.');
+        }
+        const pwdHash = await bcrypt.hash(defaultPassword, 10);
 
         // 1. Get JCB ID (ID: 8)
         const jcbRes = await client.query("SELECT hostel_id FROM hostels WHERE name ILIKE '%JCB%' LIMIT 1");

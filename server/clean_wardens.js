@@ -30,7 +30,8 @@ async function cleanWardens() {
         if (rohitRes.rows.length === 0) {
             // Create Rohit Kumar!
             const bcrypt = require('bcryptjs');
-            const pwdHash = await bcrypt.hash('password123', 10);
+            const defaultPassword = process.env.DEFAULT_SEED_PASSWORD || 'CHANGE_ME_BEFORE_DEPLOY';
+            const pwdHash = await bcrypt.hash(defaultPassword, 10);
             const inst = await client.query(`
                 INSERT INTO users (full_name, email, password_hash, is_verified, is_active, designation)
                 VALUES ('Dr. Rohit Kumar', 'rohit.kumar@jcb.dtu.ac.in', $1, true, true, 'Warden')
