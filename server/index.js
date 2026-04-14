@@ -51,8 +51,22 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Stricter rate limiter for authentication endpoints to prevent brute-force attacks
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { msg: "Too many authentication attempts. Please try again after 15 minutes." }
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+app.use('/api/auth/set-password', authLimiter);
 
-app.use(express.json());
+
+app.use(express.json({ limit: '1mb' }));
 app.use('/uploads', express.static('uploads'));
 
 let onlineUsers = {};

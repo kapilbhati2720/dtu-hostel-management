@@ -75,8 +75,12 @@ const seedDatabase = async () => {
     console.log('Hostels are in sync.');
 
     // 2. Seed Wardens
+    const defaultPassword = process.env.DEFAULT_SEED_PASSWORD || 'CHANGE_ME_BEFORE_DEPLOY';
+    if (!process.env.DEFAULT_SEED_PASSWORD) {
+      console.warn('⚠️  WARNING: DEFAULT_SEED_PASSWORD not set in .env — using insecure fallback. Set it before deploying.');
+    }
     const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash('DtuHostel@2026', salt);
+    const passwordHash = await bcrypt.hash(defaultPassword, salt);
     const nodalOfficerRole = await pool.query("SELECT role_id FROM roles WHERE role_name = 'nodal_officer'");
     const roleId = nodalOfficerRole.rows[0].role_id;
 

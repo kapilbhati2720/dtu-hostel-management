@@ -48,7 +48,7 @@ async function seedTestUsers() {
       Admin: admin@test.com
       Staff: staff@test.com
       Student: student@test.com
-      Password for all: password123`);
+      Password for all: (set via DEFAULT_SEED_PASSWORD env var)`);
 
     process.exit(0);
   } catch (err) {
