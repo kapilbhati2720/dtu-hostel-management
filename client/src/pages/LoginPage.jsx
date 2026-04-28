@@ -65,7 +65,7 @@ const LoginPage = () => {
             {/* Header with Logo */}
             <div className="flex flex-col items-center text-center mb-8">
                 {/* Logo from your public folder */}
-                <img src="/dtu-logo.jpg" alt="DTU Seal" className="w-24 h-24 mb-6" />
+                <img src="/dtu-logo.png" alt="DTU Seal" className="w-24 h-24 mb-6" />
                 
                 <h2 className="text-2xl font-bold text-gray-900 uppercase tracking-tight">
                     DTU Hostel Management Login
