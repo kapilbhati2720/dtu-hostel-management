@@ -38,8 +38,8 @@ router.post('/register', async (req, res) => {
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const tokenExpires = new Date(Date.now() + 3600000 * 24);
 
-    // 3. Insert User (Pending Commit)
-    await pool.query(
+    // 3. Insert User (inside the transaction)
+    await client.query(
         `INSERT INTO users (full_name, email, password_hash, roll_number, admission_year, branch_code, verification_token, verification_token_expires) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [fullName, email, passwordHash, rollNumber, admissionYear, branchCode, verificationToken, tokenExpires]

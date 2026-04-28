@@ -19,10 +19,27 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: 'dtu-logo.jpg',
-            sizes: '192x192 512x512',
-            type: 'image/jpeg',
-            purpose: 'any maskable'
+            src: 'dtu-logo.png',
+            sizes: '512x512', // This must match your new file dimensions exactly
+            type: 'image/png',
+            purpose: 'any' 
+          },
+          {
+            src: 'dtu-logo.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable' // Adding this allows the OS to shape the icon
+          }
+        ],
+        // Optional but recommended for the "Rich Install" UI
+        // Inside the manifest object in vite.config.js
+        screenshots: [
+          {
+            src: 'Screenshot.png', // Ensure this file is in client/public/
+            sizes: '1914x864',
+            type: 'image/png',
+            form_factor: 'wide',
+            label: 'Hostel Management Dashboard'
           }
         ]
       }
